@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Serviços</title>
+    <!-- Tailwind CSS para um design moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SDKs do Firebase (Versão Modular v10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ⚠️ SUBSTITUA COM AS SUAS CONFIGURAÇÕES DO FIREBASE
+       const firebaseConfig = {
+  apiKey: "AIzaSyDBvwGE-z1U684L7qglv8SnAscY0Tp6MoE",
+  authDomain: "surgeos.firebaseapp.com",
+  projectId: "surgeos",
+  storageBucket: "surgeos.firebasestorage.app",
+  messagingSenderId: "580234358141",
+  appId: "1:580234358141:web:633eb879d8b5baaf213014"
+};
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Disponibilizar variáveis globalmente
+        window.db = db;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.updateDoc = updateDoc;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+        window.onSnapshot = onSnapshot;
+        window.query = query;
+        window.orderBy = orderBy;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+
+        // Iniciar carregamento do sistema
+        window.inicializarSistemaColaboradores();
+        window.carregarDadosFirebase();
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Título Principal -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-extrabold text-slate-900 flex items-center gap-2">
+                🛠️ REGISTRO DE SERVIÇOS (Nuvem Firebase)
+            </h1>
+            <p class="text-slate-600 mt-1">Gerencie e Acompanhe sua produção diária, semanal e mensal sincronizada na nuvem.</p>
+        </header>
+
+        <!-- TELA DE AUTENTICAÇÃO / SELEÇÃO DE COLABORADOR (BLOQUEIA O PAINEL ATÉ LOGIN VÁLIDO) -->
+        <div id="telaAutenticacaoColaborador" class="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-md border border-slate-200 space-y-6 my-12">
+            <div class="text-center space-y-2">
+                <h2 class="text-2xl font-bold text-slate-900">👤 Identificação do Colaborador</h2>
+                <p class="text-sm text-slate-600">Selecione seu nome na lista e digite sua senha de acesso para liberar o painel de serviços.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Colaborador</label>
+                    <select id="selectColaboradorLogin" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Selecione o Colaborador --</option>
+                        <option value="1. DIEYSON DE PAULA">1. DIEYSON DE PAULA</option>
+                        <option value="2. FRANK BARBOSA">2. FRANK BARBOSA</option>
+                        <option value="3. ARLEM FREIRE">3. ARLEM FREIRE</option>
+                        <option value="4. CLEUBER BARBOSA">4. CLEUBER BARBOSA</option>
+                        <option value="5. BRUNO SOUZA">5. BRUNO SOUZA</option>
+                    </select>
+                </div>
+
+                <div id="divGrupoSenhaLogin">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Senha de Acesso</label>
+                    <input type="password" id="inputSenhaLogin" placeholder="Digite sua senha" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-slate-500 mt-1">Senha padrão inicial para novos cadastros: <b class="text-slate-700">12345</b></p>
+                </div>
+
+                <div id="divGrupoNovaSenha" class="hidden p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
+                    <h3 class="text-xs font-bold text-amber-800 uppercase tracking-wider">🔒 Alteração de Senha Obrigatória (Primeiro Acesso)</h3>
+                    <p class="text-xs text-amber-700">Você está utilizando a senha padrão. Por favor, cadastre uma nova senha pessoal para continuar.</p>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nova Senha</label>
+                        <input type="password" id="inputNovaSenhaCadastro" placeholder="Digite sua nova senha" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+                </div>
+
+                <button onclick="tentarAutenticarColaborador()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 text-sm">
+                    Entrar no Sistema
+                </button>
+            </div>
+        </div>
+
+        <!-- PAINEL PRINCIPAL (OCULTO ATÉ A AUTENTICAÇÃO BEM-SUCEDIDA) -->
+        <div id="painelPrincipalSistema" class="hidden grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- FORMULÁRIO DE LANÇAMENTO / EDIÇÃO -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit space-y-4">
+                
+                <!-- IDENTIFICAÇÃO DO COLABORADOR LOGADO -->
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex justify-between items-center">
+                    <div>
+                        <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Colaborador Autenticado</span>
+                        <span id="labelColaboradorLogado" class="text-sm font-black text-emerald-900"></span>
+                    </div>
+                    <button onclick="fazerLogout()" class="text-xs font-bold text-red-600 hover:text-red-800 underline bg-white px-2.5 py-1 rounded-lg border border-red-200">
+                        Sair / Trocar
+                    </button>
+                </div>
+
+                <h2 id="tituloForm" class="text-xl font-bold text-slate-900 flex items-center gap-2">📝 Novo Registro</h2>
+                
+                <form id="formServico" class="space-y-4">
+                    <input type="hidden" id="editId" value="">
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Data do Serviço</label>
+                        <input type="date" id="dataTrabalho" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Nº do Protocolo / OS (Somente Números, Opcional)</label>
+                        <input type="text" id="protocolo" placeholder="Ex: 2026123456" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Tipo de Serviço</label>
+                        <select id="tipoServico" onchange="atualizarSubcategorias()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="SIMPLES">SIMPLES</option>
+                            <option value="COMPLETO">COMPLETO</option>
+                        </select>
+                    </div>
+
+                    <div id="divSubcategoria">
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Subcategoria (Completo)</label>
+                        <select id="subcategoriaServico" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="FTTH">FTTH</option>
+                            <option value="FTTX">FTTX</option>
+                            <option value="FTTA">FTTA</option>
+                        </select>
+                    </div>
+
+                    <!-- Informação de pontos -->
+                    <div id="infoPontos" class="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
+                        ℹ️ Serviço SIMPLES: 39 pontos por unidade.
+                    </div>
+
+                    <!-- Campos do Cliente (Nome e WhatsApp) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nome do Cliente (Opcional)</label>
+                            <input type="text" id="nomeCliente" placeholder="Ex: João Silva" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp Cliente (Opcional)</label>
+                            <input type="text" id="whatsappCliente" placeholder="Ex: 47999999999" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-200">
+                            Registrar Serviço
+                        </button>
+                        <button type="button" id="btnCancelarEdicao" onclick="cancelarEdicao()" class="hidden w-full bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold py-2.5 px-4 rounded-lg transition duration-200">
+                            Cancelar
+                        </button>
+                        
+                        <!-- Botão Selecionável de Meses Anteriores -->
+                        <div class="pt-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Visualizar Mês Específico</label>
+                            <select id="selectMesAnterior" onchange="mudarMesReferencia()" class="w-full px-3 py-2 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <!-- Preenchido dinamicamente -->
+                            </select>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Seção de Envio de Relatório -->
+                <div class="pt-4 border-t border-slate-100 space-y-3">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">📤 Enviar Relatório</h3>
+                    <div class="flex gap-4 text-xs font-semibold text-slate-700">
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="radio" name="tipoRelatorioEnvio" value="diario" checked class="text-blue-600 focus:ring-blue-500"> Diário
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="radio" name="tipoRelatorioEnvio" value="mensal" class="text-blue-600 focus:ring-blue-500"> Mensal
+                        </label>
+                    </div>
+                    <div>
+                        <input type="text" id="destinoContato" placeholder="E-mail ou WhatsApp (com DDD)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="enviarRelatorio('email')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 px-3 rounded-lg transition">
+                            📧 Por E-mail
+                        </button>
+                        <button onclick="enviarRelatorio('whatsapp')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 px-3 rounded-lg transition">
+                            💬 Por WhatsApp
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Botão de Backup -->
+                <div class="pt-4 border-t border-slate-100 relative">
+                    <div class="relative inline-block w-full">
+                        <button onclick="toggleMenuBackup()" title="Backup e Sincronização" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2.5 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                            💾 Backup e Sincronização
+                        </button>
+                        
+                        <div id="menuBackup" class="hidden absolute left-0 bottom-12 bg-white border border-slate-200 shadow-xl rounded-xl p-2 w-full space-y-1 z-50">
+                            <button onclick="exportarBackup(); fecharMenuBackup();" class="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 rounded-lg transition flex items-center gap-2">
+                                📥 Salvar Backup Local
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Opção de Inserir Pontos Manual -->
+                <div class="pt-3">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">⚙️ Ajustar Pontos Manualmente (Opcional)</label>
+                    <input type="number" id="pontosManuais" placeholder="Deixe em branco para usar o automático" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50">
+                </div>
+            </div>
+
+            <!-- PAINEL DE RELATÓRIOS E SOMAS -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Filtro de Data e Resumo Mensal -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Filtrar por Dia Específico</label>
+                            <input type="date" id="filtroData" onchange="calcularTotais()" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="mt-4 flex justify-between items-center">
+                            <span class="text-xs text-slate-500 font-medium">Gerenciar base:</span>
+                            <button onclick="limparRegistros()" class="text-red-600 hover:text-red-800 text-xs font-semibold flex items-center gap-1 transition">
+                                🗑️ Limpar Meus Registros
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Resumo do Mês (Meu Total)</span>
+                            <div class="mt-2 flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                <div>
+                                    <p class="text-xs text-slate-500 font-semibold">Total de Tarefas</p>
+                                    <p id="qtdTarefasMes" class="text-lg font-black text-slate-800">0</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-slate-500 font-semibold">Total de Pontos</p>
+                                    <p id="pontosTarefasMes" class="text-lg font-black text-blue-600">0 pts</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-2">* Exibindo apenas os dados do técnico logado.</p>
+                    </div>
+                </div>
+
+                <!-- Painel Separado: Metas de Pontuação e Projeções -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b border-slate-100 pb-3">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            🎯 Projeção de Metas e Média Diária
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <div id="infoMediaDiaria" class="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full">
+                                0 pts/dia
+                            </div>
+                            <div id="infoMediaMesUteisTopo" class="text-xs bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-full">
+                                Média Mês (Úteis): 0 pts/dia
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="painelMetas">
+                        <!-- Preenchido via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Métricas (Cards) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL DO DIA</span>
+                        <h3 id="txtTotalDia" class="text-2xl font-black text-slate-800 mt-1">0 Pontos</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL DA SEMANA</span>
+                        <h3 id="txtTotalSemana" class="text-2xl font-black text-slate-800 mt-1">0 Pontos</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL DO MÊS</span>
+                        <h3 id="txtTotalMes" class="text-2xl font-black text-slate-800 mt-1">0 Pontos</h3>
+                    </div>
+                </div>
+
+                <!-- Tabela de Histórico -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-slate-900">📋 Meus Lançamentos (Nuvem)</h3>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500 font-semibold">Ordem:</span>
+                            <select id="ordemHistorico" onchange="calcularTotais()" class="px-2 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none">
+                                <option value="reverso" selected>Mais Recentes no Topo</option>
+                                <option value="cronologico">Dia 01 ao Fim no Topo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                                    <th class="p-3">Data</th>
+                                    <th class="p-3">Protocolo</th>
+                                    <th class="p-3">Cliente</th>
+                                    <th class="p-3">Tipo / Subcategoria</th>
+                                    <th class="p-3">Pontos</th>
+                                    <th class="p-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaHistorico" class="divide-y divide-slate-100 text-sm">
+                                <!-- Preenchido via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const hojeObj = new Date();
+        const hoje = hojeObj.toLocaleDateString('en-CA');
+        document.getElementById('dataTrabalho').value = hoje;
+        document.getElementById('filtroData').value = hoje;
+
+        let registros = [];
+        let colaboradoresDB = {}; 
+        let tecnicoLogado = null;
+        const SENHA_PADRAO = "12345";
+
+        // Inicializar banco de colaboradores no Firestore caso não existam
+        async function inicializarSistemaColaboradores() {
+            const listaNomes = [
+                "1. DIEYSON DE PAULA",
+                "2. FRANK BARBOSA",
+                "3. ARLEM FREIRE",
+                "4. CLEUBER BARBOSA",
+                "5. BRUNO SOUZA"
+            ];
+
+            try {
+                for (let nome of listaNomes) {
+                    const docRef = window.doc(window.db, "colaboradores", nome);
+                    const docSnap = await window.getDoc(docRef);
+                    if (!docSnap.exists()) {
+                        await window.setDoc(docRef, {
+                            senha: SENHA_PADRAO,
+                            precisaTrocar: true
+                        });
+                    }
+                }
+                carregarColaboradoresFirebase();
+            } catch (e) {
+                console.error("Erro ao inicializar colaboradores:", e);
+            }
+        }
+
+        function carregarColaboradoresFirebase() {
+            window.onSnapshot(window.collection(window.db, "colaboradores"), (snapshot) => {
+                snapshot.forEach((doc) => {
+                    colaboradoresDB[doc.id] = doc.data();
+                });
+            });
+        }
+
+        // Monitorar alteração no select para verificar se exige nova senha
+        document.getElementById('selectColaboradorLogin').addEventListener('change', async function() {
+            const nomeColab = this.value;
+            const divNovaSenha = document.getElementById('divGrupoNovaSenha');
+            
+            if (!nomeColab) {
+                divNovaSenha.classList.add('hidden');
+                return;
+            }
+
+            // Garante leitura imediata caso o cache local ainda não tenha populado
+            let dados = colaboradoresDB[nomeColab];
+            if (!dados) {
+                const docRef = window.doc(window.db, "colaboradores", nomeColab);
+                const docSnap = await window.getDoc(docRef);
+                if (docSnap.exists()) {
+                    dados = docSnap.data();
+                    colaboradoresDB[nomeColab] = dados;
+                }
+            }
+
+            if (dados && dados.precisaTrocar) {
+                divNovaSenha.classList.remove('hidden');
+            } else {
+                divNovaSenha.classList.add('hidden');
+            }
+        });
+
+        async function tentarAutenticarColaborador() {
+            const select = document.getElementById('selectColaboradorLogin');
+            const nomeColab = select.value;
+            const senhaInput = document.getElementById('inputSenhaLogin').value;
+            const novaSenhaInput = document.getElementById('inputNovaSenhaCadastro').value;
+
+            if (!nomeColab) {
+                alert("Por favor, selecione um colaborador.");
+                return;
+            }
+
+            // Busca os dados diretamente do Firestore para garantir precisão e evitar falhas de sincronização
+            let dadosColab = colaboradoresDB[nomeColab];
+            try {
+                const docRef = window.doc(window.db, "colaboradores", nomeColab);
+                const docSnap = await window.getDoc(docRef);
+                if (docSnap.exists()) {
+                    dadosColab = docSnap.data();
+                    colaboradoresDB[nomeColab] = dadosColab;
+                }
+            } catch (e) {
+                console.error("Erro ao buscar dados:", e);
+            }
+
+            if (!dadosColab) {
+                alert("Erro ao carregar dados do colaborador. Verifique sua conexão com a internet.");
+                return;
+            }
+
+            if (dadosColab.precisaTrocar) {
+                if (senhaInput !== SENHA_PADRAO) {
+                    alert(`Este colaborador está no primeiro acesso. Digite a senha padrão: ${SENHA_PADRAO}`);
+                    return;
+                }
+                if (!novaSenhaInput || novaSenhaInput.trim().length < 3) {
+                    alert("A nova senha deve conter pelo menos 3 caracteres.");
+                    return;
+                }
+
+                try {
+                    const docRef = window.doc(window.db, "colaboradores", nomeColab);
+                    await window.updateDoc(docRef, {
+                        senha: novaSenhaInput.trim(),
+                        precisaTrocar: false
+                    });
+                    
+                    tecnicoLogado = nomeColab;
+                    liberarPainelPrincipal();
+                } catch (e) {
+                    alert("Erro ao atualizar senha no Firebase: " + e.message);
+                }
+            } else {
+                if (senhaInput !== dadosColab.senha) {
+                    alert("Senha incorreta!");
+                    return;
+                }
+                tecnicoLogado = nomeColab;
+                liberarPainelPrincipal();
+            }
+        }
+
+        function liberarPainelPrincipal() {
+            document.getElementById('telaAutenticacaoColaborador').classList.add('hidden');
+            const painel = document.getElementById('painelPrincipalSistema');
+            painel.classList.remove('hidden');
+            painel.classList.add('grid');
+
+            document.getElementById('labelColaboradorLogado').innerText = tecnicoLogado;
+            calcularTotais();
+        }
+
+        function fazerLogout() {
+            tecnicoLogado = null;
+            document.getElementById('inputSenhaLogin').value = "";
+            document.getElementById('inputNovaSenhaCadastro').value = "";
+            document.getElementById('selectColaboradorLogin').value = "";
+            document.getElementById('divGrupoNovaSenha').classList.add('hidden');
+
+            const painel = document.getElementById('painelPrincipalSistema');
+            painel.classList.remove('grid');
+            painel.classList.add('hidden');
+
+            document.getElementById('telaAutenticacaoColaborador').classList.remove('hidden');
+        }
+
+        // Função para escutar dados do Firebase em tempo real
+        function carregarDadosFirebase() {
+            const q = window.query(window.collection(window.db, "servicos"));
+            window.onSnapshot(q, (snapshot) => {
+                registros = [];
+                snapshot.forEach((doc) => {
+                    registros.push({ firebaseId: doc.id, ...doc.data() });
+                });
+                if (tecnicoLogado) {
+                    calcularTotais();
+                }
+            }, (error) => {
+                console.error("Erro ao carregar dados do Firebase: ", error);
+            });
+        }
+
+        function toggleMenuBackup() {
+            const menu = document.getElementById('menuBackup');
+            menu.classList.toggle('hidden');
+        }
+
+        function fecharMenuBackup() {
+            document.getElementById('menuBackup').classList.add('hidden');
+        }
+
+        window.addEventListener('click', function(e) {
+            const menu = document.getElementById('menuBackup');
+            const botao = e.target.closest('button[onclick="toggleMenuBackup()"]');
+            if (!botao && !menu.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function inicializarSeletorMeses() {
+            const select = document.getElementById('selectMesAnterior');
+            select.innerHTML = '';
+            
+            const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            
+            let anoAtual = hojeObj.getFullYear();
+            let mesAtual = hojeObj.getMonth();
+
+            for (let i = 0; i < 12; i++) {
+                let m = mesAtual - i;
+                let a = anoAtual;
+                while (m < 0) {
+                    m += 12;
+                    a -= 1;
+                }
+                const valorOpt = `${a}-${String(m + 1).padStart(2, '0')}`;
+                const textoOpt = `${mesesNomes[m]} de ${a}`;
+                
+                const opt = document.createElement('option');
+                opt.value = valorOpt;
+                opt.innerText = textoOpt;
+                if (i === 0) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function mudarMesReferencia() {
+            const mesAno = document.getElementById('selectMesAnterior').value;
+            document.getElementById('filtroData').value = `${mesAno}-01`;
+            calcularTotais();
+        }
+
+        function atualizarSubcategorias() {
+            const tipo = document.getElementById('tipoServico').value;
+            const divSub = document.getElementById('divSubcategoria');
+            const info = document.getElementById('infoPontos');
+
+            if (tipo === 'SIMPLES') {
+                divSub.style.display = 'none';
+                info.innerText = "ℹ️ Serviço SIMPLES: 39 pontos por unidade.";
+            } else {
+                divSub.style.display = 'block';
+                atualizarInfoCompleto();
+            }
+        }
+
+        document.getElementById('subcategoriaServico').addEventListener('change', atualizarInfoCompleto);
+
+        function atualizarInfoCompleto() {
+            const sub = document.getElementById('subcategoriaServico').value;
+            let pts = 77;
+            if (sub === 'FTTX') pts = 83;
+            if (sub === 'FTTA') pts = 69;
+            document.getElementById('infoPontos').innerText = `ℹ️ Serviço ${sub}: ${pts} pontos por unidade.`;
+        }
+
+        // Salvar ou Atualizar no Firebase (Somente para o colaborador logado)
+        document.getElementById('formServico').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!tecnicoLogado) return;
+
+            const editId = document.getElementById('editId').value;
+            const data = document.getElementById('dataTrabalho').value;
+            const protocolo = document.getElementById('protocolo').value.trim();
+            const nomeCliente = document.getElementById('nomeCliente').value.trim();
+            const whatsappCliente = document.getElementById('whatsappCliente').value.trim();
+            const tipo = document.getElementById('tipoServico').value;
+            const pontosManuaisInput = document.getElementById('pontosManuais').value;
+            
+            let subcategoria = "Padrão";
+            let pontosUnitarios = 39;
+
+            if (tipo === 'COMPLETO') {
+                subcategoria = document.getElementById('subcategoriaServico').value;
+                if (subcategoria === 'FTTH') pontosUnitarios = 77;
+                else if (subcategoria === 'FTTX') pontosUnitarios = 83;
+                else if (subcategoria === 'FTTA') pontosUnitarios = 69;
+            }
+
+            let totalPontos = (pontosManuaisInput !== '' && !isNaN(pontosManuaisInput)) 
+                ? Number(pontosManuaisInput) 
+                : pontosUnitarios;
+
+            const dadosObjeto = {
+                colaborador: tecnicoLogado,
+                data,
+                protocolo,
+                nomeCliente,
+                whatsappCliente,
+                tipo,
+                subcategoria,
+                quantidade: 1,
+                pontos: totalPontos,
+                criadoEm: Date.now()
+            };
+
+            try {
+                if (editId) {
+                    const docRef = window.doc(window.db, "servicos", editId);
+                    await window.updateDoc(docRef, dadosObjeto);
+                    cancelarEdicao();
+                } else {
+                    await window.addDoc(window.collection(window.db, "servicos"), dadosObjeto);
+                    document.getElementById('protocolo').value = '';
+                    document.getElementById('nomeCliente').value = '';
+                    document.getElementById('whatsappCliente').value = '';
+                    document.getElementById('pontosManuais').value = '';
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (erro) {
+                alert("Erro ao salvar no Firebase: " + erro.message);
+            }
+        });
+
+        function editarRegistro(firebaseId) {
+            const reg = registros.find(r => r.firebaseId === firebaseId);
+            if (!reg || reg.colaborador !== tecnicoLogado) {
+                alert("Você só pode editar seus próprios registros.");
+                return;
+            }
+
+            document.getElementById('editId').value = reg.firebaseId;
+            document.getElementById('dataTrabalho').value = reg.data;
+            document.getElementById('protocolo').value = reg.protocolo || '';
+            document.getElementById('nomeCliente').value = reg.nomeCliente || '';
+            document.getElementById('whatsappCliente').value = reg.whatsappCliente || '';
+            document.getElementById('tipoServico').value = reg.tipo;
+            document.getElementById('pontosManuais').value = reg.pontos;
+            
+            atualizarSubcategorias();
+            if (reg.tipo === 'COMPLETO') {
+                document.getElementById('subcategoriaServico').value = reg.subcategoria;
+                atualizarInfoCompleto();
+            }
+
+            document.getElementById('tituloForm').innerText = "✏️ Editar Registro";
+            document.getElementById('btnSubmit').innerText = "Salvar Alterações";
+            document.getElementById('btnSubmit').className = "w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-200";
+            document.getElementById('btnCancelarEdicao').classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelarEdicao() {
+            document.getElementById('editId').value = '';
+            document.getElementById('formServico').reset();
+            document.getElementById('dataTrabalho').value = hoje;
+            document.getElementById('pontosManuais').value = '';
+            document.getElementById('tituloForm').innerText = "📝 Novo Registro";
+            document.getElementById('btnSubmit').innerText = "Registrar Serviço";
+            document.getElementById('btnSubmit').className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-200";
+            document.getElementById('btnCancelarEdicao').classList.add('hidden');
+            atualizarSubcategorias();
+        }
+
+        async function excluirRegistro(firebaseId) {
+            const reg = registros.find(r => r.firebaseId === firebaseId);
+            if (!reg || reg.colaborador !== tecnicoLogado) {
+                alert("Você só pode excluir seus próprios registros.");
+                return;
+            }
+
+            if (confirm("Deseja realmente excluir este serviço da nuvem?")) {
+                try {
+                    await window.deleteDoc(window.doc(window.db, "servicos", firebaseId));
+                } catch (erro) {
+                    alert("Erro ao excluir: " + erro.message);
+                }
+            }
+        }
+
+        function exportarBackup() {
+            const meusRegistros = registros.filter(r => r.colaborador === tecnicoLogado);
+            const dadosStr = JSON.stringify(meusRegistros, null, 2);
+            const blob = new Blob([dadosStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_nuvem_${tecnicoLogado}_${hoje}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function enviarMensagemCliente(whatsapp, nome) {
+            if (!whatsapp) {
+                alert("Nenhum número de WhatsApp cadastrado para este cliente.");
+                return;
+            }
+            let nomeFormatado = nome ? nome : "cliente";
+            let texto = `Olá ${nomeFormatado}! Me chamo técnico da Unifique.\n\n`;
+            texto += `Gostaria de agradecer pela confiança em meu trabalho durante a manutenção da sua internet.\n\n`;
+            texto += `Caso precise de qualquer novo suporte, mantenha nosso contato salvo ou utilize os canais oficiais abaixo:\n\n`;
+            texto += `WhatsApp Unifique: (47) 3380-0800\n`;
+            texto += `Central de Atendimento/Suporte 24h: Ligue 105 80 ou (47) 3380-0800\n`;
+            texto += `Área do Cliente Unifique: unifique.com.br/atendimento\n\n`;
+            texto += `Estou sempre à disposição! Tenha um excelente dia! 🙂`;
+
+            let numeroLimpo = whatsapp.replace(/[^0-9]/g, '');
+            const url = `https://api.whatsapp.com/send?phone=${encodeURIComponent(numeroLimpo)}&text=${encodeURIComponent(texto)}`;
+            window.open(url, '_blank');
+        }
+
+        function calcularTotais() {
+            if (!tecnicoLogado) return;
+
+            const dataFiltroStr = document.getElementById('filtroData').value;
+            if (!dataFiltroStr) return;
+
+            const [anoF, mesF, diaF] = dataFiltroStr.split('-').map(Number);
+
+            // Filtra os registros estritamente pertencentes ao colaborador logado
+            const meusRegistros = registros.filter(r => r.colaborador === tecnicoLogado);
+
+            let totalDiaSelecionado = 0;
+            let totalSemana = 0;
+            let totalMes = 0;
+
+            let qtdTarefasMes = 0;
+            let pontosTarefasMes = 0;
+
+            const tbody = document.getElementById('tabelaHistorico');
+            tbody.innerHTML = '';
+
+            const [anoSel, mesSel, diaSel] = dataFiltroStr.split('-').map(Number);
+            const dFiltro = new Date(anoSel, mesSel - 1, diaSel);
+            const diaSemanaFiltro = dFiltro.getDay();
+            const diffParaSegunda = dFiltro.getDate() - diaSemanaFiltro + (diaSemanaFiltro === 0 ? -6 : 1);
+            const primeiraDataSemana = new Date(new Date(dFiltro).setDate(diffParaSegunda));
+            const ultimaDataSemana = new Date(primeiraDataSemana);
+            ultimaDataSemana.setDate(primeiraDataSemana.getDate() + 6);
+
+            meusRegistros.forEach(reg => {
+                const [anoR, mesR, diaR] = reg.data.split('-').map(Number);
+                const dataRegObj = new Date(anoR, mesR - 1, diaR);
+
+                if (reg.data === dataFiltroStr) {
+                    totalDiaSelecionado += reg.pontos;
+                }
+
+                if (dataRegObj >= primeiraDataSemana && dataRegObj <= ultimaDataSemana) {
+                    totalSemana += reg.pontos;
+                }
+
+                if (mesR === mesF && anoR === anoF) {
+                    totalMes += reg.pontos;
+                    qtdTarefasMes += 1;
+                    pontosTarefasMes += reg.pontos;
+                }
+            });
+
+            let registrosMes = meusRegistros.filter(reg => {
+                const [anoR, mesR] = reg.data.split('-').map(Number);
+                return mesR === mesF && anoR === anoF;
+            });
+
+            const tipoOrdem = document.getElementById('ordemHistorico').value;
+            registrosMes.sort((a, b) => {
+                let compData = new Date(b.data) - new Date(a.data);
+                if (compData === 0) {
+                    let aTemWpp = (a.whatsappCliente && a.whatsappCliente.trim() !== '') ? 1 : 0;
+                    let bTemWpp = (b.whatsappCliente && b.whatsappCliente.trim() !== '') ? 1 : 0;
+                    
+                    if (aTemWpp !== bTemWpp) {
+                        return bTemWpp - aTemWpp;
+                    }
+                    compData = (b.criadoEm || 0) - (a.criadoEm || 0);
+                }
+                if (tipoOrdem === 'reverso') {
+                    return compData;
+                } else {
+                    return -compData;
+                }
+            });
+
+            registrosMes.forEach(reg => {
+                const [anoR, mesR, diaR] = reg.data.split('-').map(Number);
+                const dataFormatada = `${String(diaR).padStart(2,'0')}/${String(mesR).padStart(2,'0')}/${anoR}`;
+                
+                let botaoWppCliente = '';
+                if (reg.whatsappCliente) {
+                    botaoWppCliente = `<button onclick="enviarMensagemCliente('${reg.whatsappCliente}', '${reg.nomeCliente || ''}')" title="Enviar saudação WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition">💬 ZAP</button>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-medium text-slate-700">${dataFormatada}</td>
+                        <td class="p-3 font-semibold text-slate-800">${reg.protocolo || '<span class="text-slate-300 font-normal">Sem protocolo</span>'}</td>
+                        <td class="p-3">
+                            <div class="font-semibold text-slate-800">${reg.nomeCliente || '<span class="text-slate-300 font-normal">Não informado</span>'}</div>
+                            <div class="text-xs text-slate-500">${reg.whatsappCliente || ''}</div>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold ${reg.tipo === 'SIMPLES' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${reg.tipo}</span>
+                            <div class="text-xs text-slate-500 mt-0.5">${reg.subcategoria}</div>
+                        </td>
+                        <td class="p-3 font-bold text-slate-800">${reg.pontos} pts</td>
+                        <td class="p-3 text-center flex justify-center items-center gap-1">
+                            ${botaoWppCliente}
+                            <button onclick="editarRegistro('${reg.firebaseId}')" title="Editar serviço" class="text-slate-400 hover:text-amber-600 p-1.5 rounded-lg transition">✏️</button>
+                            <button onclick="excluirRegistro('${reg.firebaseId}')" title="Excluir serviço" class="text-slate-400 hover:text-red-600 p-1.5 rounded-lg transition">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            if (registrosMes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum serviço registrado neste mês.</td></tr>`;
+            }
+
+            document.getElementById('txtTotalDia').innerText = `${totalDiaSelecionado} Pontos`;
+            document.getElementById('txtTotalSemana').innerText = `${totalSemana} Pontos`;
+            document.getElementById('txtTotalMes').innerText = `${totalMes} Pontos`;
+
+            let diasUteisPassados = 0;
+            const dataHojeObj = new Date();
+            const anoAtual = dataHojeObj.getFullYear();
+            const mesAtual = dataHojeObj.getMonth() + 1;
+            
+            const ultimoDiaDoMes = new Date(anoF, mesF, 0).getDate();
+            const limiteDia = (anoF === anoAtual && mesF === mesAtual) ? dataHojeObj.getDate() : ultimoDiaDoMes;
+
+            for (let d = 1; d <= limiteDia; d++) {
+                let dataTemp = new Date(anoF, mesF - 1, d);
+                let ds = dataTemp.getDay();
+                if (ds !== 0 && ds !== 6) { 
+                    diasUteisPassados++;
+                }
+            }
+            if (diasUteisPassados < 1) diasUteisPassados = 1;
+
+            let mediaMesUteis = totalMes / diasUteisPassados;
+            document.getElementById('infoMediaMesUteisTopo').innerText = `Média Mês (Úteis): ${mediaMesUteis.toFixed(1)} pts/dia`;
+
+            document.getElementById('qtdTarefasMes').innerText = qtdTarefasMes;
+            document.getElementById('pontosTarefasMes').innerText = `${pontosTarefasMes} pts`;
+
+            atualizarPainelMetasEProjecao(anoF, mesF, meusRegistros);
+        }
+
+        function atualizarPainelMetasEProjecao(ano, mes, meusRegistros) {
+            const pontosManuaisInput = document.getElementById('pontosManuais').value;
+            let valorManualAtual = (pontosManuaisInput !== '' && !isNaN(pontosManuaisInput)) ? Number(pontosManuaisInput) : 0;
+
+            let diasUteisPassados = 0;
+            let diasUteisRestantes = 0;
+            let totalDiasUteisMes = 0;
+
+            const dataHojeObj = new Date();
+            const anoAtual = dataHojeObj.getFullYear();
+            const mesAtual = dataHojeObj.getMonth() + 1;
+            
+            const ultimoDiaDoMes = new Date(ano, mes, 0).getDate();
+            const limiteDia = (ano === anoAtual && mes === mesAtual) ? dataHojeObj.getDate() : ultimoDiaDoMes;
+            
+            for (let d = 1; d <= ultimoDiaDoMes; d++) {
+                let dataTemp = new Date(ano, mes - 1, d);
+                let ds = dataTemp.getDay();
+                if (ds !== 0 && ds !== 6) { 
+                    totalDiasUteisMes++;
+                    if (d <= limiteDia) {
+                        diasUteisPassados++;
+                    } else {
+                        diasUteisRestantes++;
+                    }
+                }
+            }
+            if (diasUteisPassados < 1) diasUteisPassados = 1;
+
+            let pontosMesAtual = 0;
+            meusRegistros.forEach(reg => {
+                const [anoR, mesR] = reg.data.split('-').map(Number);
+                if (anoR === ano && mesR === mes) {
+                    pontosMesAtual += reg.pontos;
+                }
+            });
+
+            let mediaDiaria = 0;
+            let projecaoFinalMes = 0;
+            let modoManualAtivo = false;
+
+            if (valorManualAtual > 1000) {
+                modoManualAtivo = true;
+                mediaDiaria = valorManualAtual / diasUteisPassados;
+                projecaoFinalMes = Math.round((mediaDiaria * diasUteisRestantes) + pontosMesAtual);
+                document.getElementById('infoMediaDiaria').innerText = `${mediaDiaria.toFixed(1)} pts/dia`;
+            } else {
+                mediaDiaria = pontosMesAtual / diasUteisPassados;
+                projecaoFinalMes = Math.round((mediaDiaria * diasUteisRestantes) + pontosMesAtual);
+                document.getElementById('infoMediaDiaria').innerText = `${mediaDiaria.toFixed(1)} pts/dia`;
+            }
+
+            const metas = [6500, 7500, 8500];
+            const container = document.getElementById('painelMetas');
+            container.innerHTML = '';
+
+            let diasUteisRestantesCalculo = diasUteisRestantes > 0 ? diasUteisRestantes : 1;
+
+            metas.forEach(meta => {
+                let falta = meta - pontosMesAtual;
+                if (falta < 0) falta = 0;
+
+                let porcentagem = (pontosMesAtual / meta) * 100;
+                if (porcentagem > 100) porcentagem = 100;
+
+                let pontosNecessariosPorDiaUtil = falta / diasUteisRestantesCalculo;
+
+                container.innerHTML += `
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 flex flex-col justify-between space-y-3">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-bold text-slate-700 uppercase">META: ${meta} PTS</span>
+                                <span class="text-xs font-bold text-blue-600">Faltam: ${falta} pts</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden mt-2">
+                                <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: ${porcentagem.toFixed(1)}%"></div>
+                            </div>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-[10px] font-semibold text-slate-500">Atingido</span>
+                                <span class="text-[10px] font-bold text-slate-700">${porcentagem.toFixed(1)}% (${pontosMesAtual} pts)</span>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-600 space-y-1 border-t border-slate-200/60 pt-2">
+                            <p>• Falta para a meta: <b class="text-slate-800">${falta} pts</b></p>
+                            <p>• Meta diária (dias úteis): <b class="text-slate-800">${pontosNecessariosPorDiaUtil.toFixed(1)} pts/dia</b></p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            let textoDescritivoProjecao = modoManualAtivo 
+                ? `Cálculo baseado no ajuste manual de ${valorManualAtual} pts dividido por ${diasUteisPassados} dias úteis (${mediaDiaria.toFixed(1)} pts/dia), multiplicado pelos ${diasUteisRestantes} dias úteis restantes.`
+                : `Média diária (${mediaDiaria.toFixed(1)} pts/dia) multiplicada pelos ${diasUteisRestantes} dias úteis restantes e somada aos pontos totais do mês (${pontosMesAtual} pts).`;
+
+            container.innerHTML += `
+                <div class="md:col-span-3 bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100 flex flex-col md:flex-row justify-between items-center gap-2">
+                    <div>
+                        <span class="text-xs font-bold text-indigo-600 uppercase">Projeção de Fechamento de Mês (${modoManualAtivo ? 'Modo Manual Ativo (>1000 pts)' : 'Mantendo o ritmo atual'})</span>
+                        <p class="text-xs text-slate-500 mt-0.5">${textoDescritivoProjecao}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-lg font-black text-indigo-700">${projecaoFinalMes} pts</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById('pontosManuais').addEventListener('input', function() {
+            calcularTotais();
+        });
+
+        function enviarRelatorio(tipoCanal) {
+            if (!tecnicoLogado) return;
+            const destino = document.getElementById('destinoContato').value.trim();
+            const tipoEnvio = document.querySelector('input[name="tipoRelatorioEnvio"]:checked').value;
+            const dataFiltroStr = document.getElementById('filtroData').value;
+            const [anoF, mesF, diaF] = dataFiltroStr.split('-').map(Number);
+            
+            const meusRegistros = registros.filter(r => r.colaborador === tecnicoLogado);
+            let registrosAlvo = [];
+            let tituloRelatorio = "";
+
+            if (tipoEnvio === 'diario') {
+                registrosAlvo = meusRegistros.filter(reg => reg.data === dataFiltroStr);
+                tituloRelatorio = `RELATÓRIO DIÁRIO (${tecnicoLogado}) - ${String(diaF).padStart(2,'0')}/${String(mesF).padStart(2,'0')}/${anoF}`;
+            } else {
+                registrosAlvo = meusRegistros.filter(reg => {
+                    const [anoR, mesR] = reg.data.split('-').map(Number);
+                    return mesR === mesF && anoR === anoF;
+                });
+                tituloRelatorio = `RELATÓRIO MENSUAL (${tecnicoLogado}) - ${String(mesF).padStart(2,'0')}/${anoF}`;
+            }
+
+            let totalPontos = registrosAlvo.reduce((acc, r) => acc + r.pontos, 0);
+            let totalTarefas = registrosAlvo.length;
+
+            let mensagem = `━━━━━━━━━━━━━━━━━━━━━\n`;
+            mensagem += `📋 *${tituloRelatorio}*\n`;
+            mensagem += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+            
+            mensagem += `📊 *RESUMO GERAL:*\n`;
+            mensagem += `• Total de Tarefas: ${totalTarefas}\n`;
+            mensagem += `• Total de Pontos: ${totalPontos} pts\n\n`;
+
+            mensagem += `📝 *DETALHAMENTO DOS LANÇAMENTOS:*\n`;
+            if (registrosAlvo.length === 0) {
+                mensagem += `Nenhum serviço registrado para este período.\n`;
+            } else {
+                registrosAlvo.forEach((r, index) => {
+                    let dataFmt = r.data.split('-').reverse().join('/');
+                    let proto = r.protocolo ? `OS: ${r.protocolo}` : 'Sem OS';
+                    let cliente = r.nomeCliente ? `Cliente: ${r.nomeCliente}` : 'Cliente não informado';
+                    let wpp = r.whatsappCliente ? ` | Tel: ${r.whatsappCliente}` : '';
+                    
+                    mensagem += `\n${index + 1}. Data: ${dataFmt}\n`;
+                    mensagem += `   • Protocolo: ${proto}\n`;
+                    mensagem += `   • Cliente: ${cliente}${wpp}\n`;
+                    mensagem += `   • Serviço: ${r.tipo} (${r.subcategoria || 'Padrão'})\n`;
+                    mensagem += `   • Pontuação: ${r.pontos} pts\n`;
+                });
+            }
+            mensagem += `\n━━━━━━━━━━━━━━━━━━━━━`;
+
+            if (tipoCanal === 'whatsapp') {
+                const url = `https://api.whatsapp.com/send?phone=${encodeURIComponent(destino)}&text=${encodeURIComponent(mensagem)}`;
+                window.open(url, '_blank');
+            } else {
+                const assunto = encodeURIComponent(tituloRelatorio);
+                const corpo = encodeURIComponent(mensagem);
+                window.location.href = `mailto:${destino}?subject=${assunto}&body=${corpo}`;
+            }
+        }
+
+        async function limparRegistros() {
+            if (!tecnicoLogado) return;
+            const meusRegistros = registros.filter(r => r.colaborador === tecnicoLogado);
+
+            if (confirm("Deseja realmente apagar todos os seus serviços salvos na nuvem?")) {
+                try {
+                    for (let reg of meusRegistros) {
+                        await window.deleteDoc(window.doc(window.db, "servicos", reg.firebaseId));
+                    }
+                    cancelarEdicao();
+                } catch (erro) {
+                    alert("Erro ao limpar registros: " + erro.message);
+                }
+            }
+        }
+
+        inicializarSeletorMeses();
+        atualizarSubcategorias();
+    </script>
+</body>
+</html>
