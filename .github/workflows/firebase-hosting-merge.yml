@@ -17,3 +17,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SURGEOS }}
           channelId: live
           projectId: surgeos
+          entryPoint: ./SURGEOS
