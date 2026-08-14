@@ -73,8 +73,9 @@
         <header class="mb-8 text-center">
             <div class="inline-block bg-white rounded-2xl shadow-md border border-slate-200 px-6 py-4">
                 <h1 class="text-3xl font-extrabold text-slate-900 flex items-center justify-center gap-2">
-                    <i data-lucide="wrench" class="w-7 h-7 text-blue-600"></i> REGISTRO DE O.S TÉCNICO EM MANUTENÇÃO
+                    <i data-lucide="wrench" class="w-7 h-7 text-blue-600"></i> REGISTRO DE O.S
                 </h1>
+                <p class="text-base font-bold text-slate-500 tracking-wide -mt-0.5">TÉCNICO EM MANUTENÇÃO</p>
                 <p class="text-slate-600 mt-1">Gerencie e Acompanhe sua produção diária, semanal e mensal sincronizada na nuvem.</p>
             </div>
         </header>
@@ -101,7 +102,7 @@
                         <line x1="16" y1="19.2" x2="18" y2="19.2" stroke="#2563eb" stroke-width="1" />
                     </svg>
                 </div>
-                <span class="text-[11px] font-bold tracking-[0.2em] text-slate-400">D.W.P</span>
+                <span class="text-[11px] font-bold tracking-[0.15em] text-slate-400">Criador <b class="text-slate-500">D.W.P</b></span>
             </div>
 
             <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-200 space-y-6">
@@ -153,6 +154,20 @@
                 </div>
             </div>
             </div>
+
+            <!-- CADASTRO DE NOVO COLABORADOR NA ÁREA PRINCIPAL: qualquer pessoa pode
+                 criar seu próprio acesso aqui, sem precisar da senha de admin. Só a
+                 EXCLUSÃO de um colaborador continua restrita ao Painel Administrativo. -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3 mt-4">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> Cadastrar Novo Colaborador</h3>
+                <div class="flex flex-col md:flex-row gap-2">
+                    <input type="text" id="inputNomeNovoColab" placeholder="Nome completo do colaborador" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="cadastrarColaborador()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition">
+                        Cadastrar
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500">Senha inicial padrão: <b class="text-slate-700">123456</b> — o colaborador será obrigado a trocá-la no primeiro acesso.</p>
+            </div>
         </div>
 
         <!-- MODAL: LOGIN DO ADMINISTRADOR -->
@@ -182,14 +197,7 @@
             </div>
 
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> Cadastrar Novo Colaborador</h3>
-                <div class="flex flex-col md:flex-row gap-2">
-                    <input type="text" id="inputNomeNovoColab" placeholder="Nome completo do colaborador" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button onclick="cadastrarColaborador()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition">
-                        Cadastrar
-                    </button>
-                </div>
-                <p class="text-xs text-slate-500">Senha inicial padrão: <b class="text-slate-700">123456</b> — o colaborador será obrigado a trocá-la no primeiro acesso.</p>
+                <p class="text-xs text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i> O cadastro de novos colaboradores agora é feito direto na tela principal de login — não precisa mais da senha de administrador para isso. Aqui no painel admin só é possível <b>remover</b> o acesso de um colaborador.</p>
             </div>
 
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
@@ -1793,7 +1801,16 @@
                     precisaTrocar: true
                 });
                 inputNome.value = '';
-                alert(`Colaborador "${nome}" cadastrado com sucesso! Senha inicial: ${SENHA_PADRAO}`);
+                alert(`Colaborador "${nome}" cadastrado com sucesso!\n\nSenha inicial: ${SENHA_PADRAO}\n\nJá selecionamos seu nome ali em cima — é só digitar essa senha e criar sua senha pessoal para entrar.`);
+
+                // Já deixa o nome recém-criado selecionado no login, para o
+                // colaborador não precisar procurar na lista de novo.
+                const select = document.getElementById('selectColaboradorLogin');
+                if (select) {
+                    select.value = nome;
+                    select.dispatchEvent(new Event('change'));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             } catch (e) {
                 alert("Erro ao cadastrar colaborador: " + e.message);
             }
