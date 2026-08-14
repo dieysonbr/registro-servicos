@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Só permite acesso a quem tiver uma sessão autenticada no Firebase
+    // (mesmo que anônima, criada automaticamente pelo site). Isso bloqueia
+    // quem tentar ler/escrever direto na API do Firestore sem passar pelo
+    // aplicativo.
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    // ---- Colaboradores (login, senha, último acesso) ----
+    match /colaboradores/{nomeColaborador} {
+      allow read: if autenticado();
+      allow create, update: if autenticado()
+        && request.resource.data.senha is string
+        && request.resource.data.precisaTrocar is bool;
+      allow delete: if autenticado();
+    }
+
+    // ---- Registros de serviço ----
+    match /servicos/{servicoId} {
+      allow read: if autenticado();
+      allow create: if autenticado()
+        && request.resource.data.colaborador is string
+        && request.resource.data.pontos is number;
+      allow update, delete: if autenticado();
+    }
+
+    // ---- Configuração do administrador ----
+    // A senha do admin pode ser LIDA por qualquer sessão autenticada (é
+    // assim que o botão "Área do Administrador" confere a senha), mas
+    // NUNCA pode ser escrita pelo navegador — só pelo Admin SDK
+    // (script configurar_senha_admin.js), rodando localmente.
+    match /admin/config {
+      allow get: if autenticado();
+      allow write: if false;
+    }
+
+    // Bloqueia qualquer outra coleção/documento não previsto explicitamente
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
