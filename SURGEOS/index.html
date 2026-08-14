@@ -7,6 +7,18 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232563eb'/%3E%3Cpath d='M27 30a23 23 0 0 1 46 0' stroke='white' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3Crect x='25' y='27' width='50' height='7' rx='3.5' fill='white'/%3E%3Ccircle cx='50' cy='39' r='11' fill='white'/%3E%3Cpath d='M30 86v-8a20 20 0 0 1 40 0v8' stroke='white' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3Crect x='60' y='55' width='24' height='30' rx='4' fill='white'/%3E%3Crect x='67' y='51' width='10' height='7' rx='2' fill='%232563eb'/%3E%3Cline x1='66' y1='64' x2='78' y2='64' stroke='%232563eb' stroke-width='4'/%3E%3Cline x1='66' y1='71' x2='78' y2='71' stroke='%232563eb' stroke-width='4'/%3E%3Cline x1='66' y1='78' x2='74' y2='78' stroke='%232563eb' stroke-width='4'/%3E%3C/svg%3E">
     <!-- Tailwind CSS para um design moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Animação do texto corrido (marquee) usado no aviso do campo de pontos manuais da RV -->
+    <style>
+        @keyframes correrTextoRV {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .texto-correndo-rv {
+            display: inline-block;
+            white-space: nowrap;
+            animation: correrTextoRV 10s linear infinite;
+        }
+    </style>
     <!-- Lucide: ícones outline de linha única (substituem os emojis) -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
@@ -348,7 +360,19 @@
 
                     <!-- Opção de Inserir Pontos Manual (Total de Pontos da RV) -->
                     <div>
-                        <input type="number" id="pontosManuais" placeholder="INSERIR TOTAL DE PONTOS DA RV MANUALMENTE" title="Aqui você vai adicionar a pontuação total da RV do mês caso você não tenha inserido nenhuma pontuação anterior, após inserir só clicar em REGISTRAR SERVIÇO." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-200">
+                        <!-- Aviso animado (seta piscando + texto correndo): só aparece até o
+                             colaborador usar este campo pela 1ª vez. Depois disso, some sozinho. -->
+                        <div id="avisoPontosManuaisRV" class="hidden items-center gap-2 mb-1.5">
+                            <svg class="w-5 h-5 text-amber-500 shrink-0 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 4v15" />
+                                <path d="M12 19l-5-5" />
+                                <path d="M12 19l5-5" />
+                            </svg>
+                            <div class="flex-1 overflow-hidden rounded-lg bg-amber-100 border border-amber-300 py-1 px-1">
+                                <span class="texto-correndo-rv text-[11px] font-bold text-amber-700">INSERIR TOTAL DE PONTOS DA RV MANUALMENTE : PASSE O MOUSE AQUI&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INSERIR TOTAL DE PONTOS DA RV MANUALMENTE : PASSE O MOUSE AQUI&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                            </div>
+                        </div>
+                        <input type="number" id="pontosManuais" placeholder="INSERIR TOTAL DE PONTOS DA RV MANUALMENTE" title="Exemplo: se na tabela de RV geral que enviaram no grupo operacional você estiver, por exemplo, com 2359 pontos, insira 2359 pontos neste campo. A partir daí, adicione cada serviço executado normalmente, um por um, dali em diante." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-200">
                     </div>
 
                     <div class="space-y-2">
@@ -620,6 +644,7 @@
                 });
                 popularSelectColaboradores();
                 if (adminLogado) renderizarTabelaAdmin();
+                if (tecnicoLogado) atualizarAvisoPontosManuaisRV();
 
                 // Tenta reaproveitar um login salvo anteriormente no navegador,
                 // evitando pedir senha novamente em acessos futuros. Só é
@@ -776,6 +801,23 @@
             }
         }
 
+        // Mostra/esconde o aviso animado (seta piscando + texto correndo) do campo
+        // de pontos manuais da RV. Só aparece se o colaborador logado ainda NUNCA
+        // usou esse campo — depois da 1ª vez que ele usa, some para sempre (fica
+        // guardado no Firestore, então não volta nem trocando de aparelho).
+        function atualizarAvisoPontosManuaisRV() {
+            const aviso = document.getElementById('avisoPontosManuaisRV');
+            if (!aviso || !tecnicoLogado) return;
+            const jaUsou = colaboradoresDB[tecnicoLogado] && colaboradoresDB[tecnicoLogado].usouPontosManuaisRV;
+            if (jaUsou) {
+                aviso.classList.add('hidden');
+                aviso.classList.remove('flex');
+            } else {
+                aviso.classList.remove('hidden');
+                aviso.classList.add('flex');
+            }
+        }
+
         function liberarPainelPrincipal() {
             document.getElementById('telaAutenticacaoColaborador').classList.add('hidden');
             const painel = document.getElementById('painelPrincipalSistema');
@@ -783,6 +825,7 @@
             painel.classList.add('grid');
 
             document.getElementById('labelColaboradorLogado').innerText = tecnicoLogado;
+            atualizarAvisoPontosManuaisRV();
             calcularTotais();
         }
 
@@ -1083,6 +1126,23 @@
                     document.getElementById('whatsappCliente').value = '';
                     document.getElementById('pontosManuais').value = '';
                     selecionarTipoCliente('PF');
+                }
+                // Se o colaborador usou o campo de pontos manuais da RV neste
+                // lançamento novo (não vale para edição), marca no Firestore que
+                // ele já usou esse campo pela 1ª vez — o aviso animado (seta +
+                // texto correndo) some para sempre a partir de agora.
+                if (!editId && pontosManuaisInput !== '' && !isNaN(pontosManuaisInput)) {
+                    if (!colaboradoresDB[tecnicoLogado] || !colaboradoresDB[tecnicoLogado].usouPontosManuaisRV) {
+                        try {
+                            await window.updateDoc(window.doc(window.db, "colaboradores", tecnicoLogado), {
+                                usouPontosManuaisRV: true
+                            });
+                            if (colaboradoresDB[tecnicoLogado]) colaboradoresDB[tecnicoLogado].usouPontosManuaisRV = true;
+                        } catch (e) {
+                            console.error("Erro ao marcar uso do campo de pontos manuais:", e);
+                        }
+                        atualizarAvisoPontosManuaisRV();
+                    }
                 }
                 registrarAtividadeColaborador();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
