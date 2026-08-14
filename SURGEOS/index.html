@@ -73,7 +73,7 @@
         <header class="mb-8 text-center">
             <div class="inline-block bg-white rounded-2xl shadow-md border border-slate-200 px-6 py-4">
                 <h1 class="text-3xl font-extrabold text-slate-900 flex items-center justify-center gap-2">
-                    <i data-lucide="wrench" class="w-7 h-7 text-blue-600"></i> REGISTRO DE O.S MANUTENÇÃO
+                    <i data-lucide="wrench" class="w-7 h-7 text-blue-600"></i> REGISTRO DE O.S TÉCNICO EM MANUTENÇÃO
                 </h1>
                 <p class="text-slate-600 mt-1">Gerencie e Acompanhe sua produção diária, semanal e mensal sincronizada na nuvem.</p>
             </div>
@@ -83,7 +83,7 @@
         <div id="telaAutenticacaoColaborador" class="max-w-xl mx-auto my-12">
 
             <!-- LOGO GRANDE CENTRALIZADA -->
-            <div class="flex flex-col items-center gap-3 mb-6">
+            <div class="flex flex-col items-center gap-2 mb-6">
                 <div class="w-20 h-20 rounded-2xl bg-blue-600 shadow-lg shadow-blue-600/30 flex items-center justify-center">
                     <svg viewBox="0 0 24 24" class="w-11 h-11" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                         <!-- capacete -->
@@ -101,6 +101,7 @@
                         <line x1="16" y1="19.2" x2="18" y2="19.2" stroke="#2563eb" stroke-width="1" />
                     </svg>
                 </div>
+                <span class="text-[11px] font-bold tracking-[0.2em] text-slate-400">D.W.P</span>
             </div>
 
             <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-200 space-y-6">
@@ -129,7 +130,7 @@
                 <div id="divGrupoSenhaLogin">
                     <label class="block text-sm font-bold text-slate-700 mb-1">Senha de Acesso</label>
                     <input type="password" id="inputSenhaLogin" placeholder="Digite sua senha" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <p class="text-xs text-slate-500 mt-1">Senha padrão inicial para novos cadastros: <b class="text-slate-700">12345</b></p>
+                    <p class="text-xs text-slate-500 mt-1">Senha padrão inicial para novos cadastros: <b class="text-slate-700">123456</b></p>
                 </div>
 
                 <div id="divGrupoNovaSenha" class="hidden p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
@@ -188,12 +189,12 @@
                         Cadastrar
                     </button>
                 </div>
-                <p class="text-xs text-slate-500">Senha inicial padrão: <b class="text-slate-700">12345</b> — o colaborador será obrigado a trocá-la no primeiro acesso.</p>
+                <p class="text-xs text-slate-500">Senha inicial padrão: <b class="text-slate-700">123456</b> — o colaborador será obrigado a trocá-la no primeiro acesso.</p>
             </div>
 
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                 <div class="flex justify-between items-center flex-wrap gap-2">
-                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-blue-600"></i> Colaboradores e Último Acesso</h3>
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-blue-600"></i> Colaboradores e Última Atividade</h3>
                     <button onclick="abrirRanking()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 px-3 rounded-lg transition flex items-center gap-1.5">
                         <i data-lucide="trophy" class="w-3.5 h-3.5"></i> Ver Ranking Geral
                     </button>
@@ -543,7 +544,7 @@
         let tecnicoLogado = null;
         let adminLogado = false;
         let autoLoginTentado = false; // Garante que o auto-login só é tentado 1x por carregamento de página
-        const SENHA_PADRAO = "12345";
+        const SENHA_PADRAO = "123456";
         const CHAVE_LOGIN_SALVO = "surgeos_tecnicoLogado"; // Chave usada no localStorage para manter o login
         // Doc "marcador" gravado dentro da própria coleção "colaboradores" para
         // indicar que a criação inicial dos 6 nomes padrão já foi feita. Sem
@@ -675,6 +676,25 @@
                 divNovaSenha.classList.add('hidden');
             }
         });
+
+        // Atualiza a marca de "último acesso" do colaborador logado sempre que
+        // ele realiza uma ação de verdade no sistema (criar, editar ou excluir
+        // um registro de serviço) — não só no momento do login. Assim o painel
+        // do administrador mostra quando o colaborador de fato mexeu em algo
+        // pela última vez, não apenas quando entrou no sistema.
+        async function registrarAtividadeColaborador() {
+            if (!tecnicoLogado) return;
+            try {
+                await window.updateDoc(window.doc(window.db, "colaboradores", tecnicoLogado), {
+                    ultimoAcesso: Date.now()
+                });
+                if (colaboradoresDB[tecnicoLogado]) {
+                    colaboradoresDB[tecnicoLogado] = { ...colaboradoresDB[tecnicoLogado], ultimoAcesso: Date.now() };
+                }
+            } catch (e) {
+                console.error("Erro ao registrar atividade do colaborador:", e);
+            }
+        }
 
         async function tentarAutenticarColaborador() {
             const select = document.getElementById('selectColaboradorLogin');
@@ -1056,6 +1076,7 @@
                     document.getElementById('pontosManuais').value = '';
                     selecionarTipoCliente('PF');
                 }
+                registrarAtividadeColaborador();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (erro) {
                 alert("Erro ao salvar no Firebase: " + erro.message);
@@ -1122,6 +1143,7 @@
                     // tempo real (onSnapshot) — que normalmente é rápido, mas em
                     // conexões instáveis pode demorar alguns instantes para chegar.
                     registros = registros.filter(r => r.firebaseId !== firebaseId);
+                    registrarAtividadeColaborador();
                     if (tecnicoLogado) calcularTotais();
                 } catch (erro) {
                     alert("Erro ao excluir: " + erro.message + "\n\nO registro pode não ter sido removido da nuvem. Tente novamente ou use 'Recalcular Totais' para conferir.");
@@ -1801,7 +1823,7 @@
                 if (ts > ultimoTs) { ultimoTs = ts; ultimoNome = nome; }
             });
             document.getElementById('ultimoAcessoResumo').innerHTML = ultimoNome
-                ? `<i data-lucide="clock" class="w-3 h-3 inline -mt-0.5"></i> Último a acessar o sistema: ${ultimoNome} — ${formatarDataHora(ultimoTs)}`
+                ? `<i data-lucide="clock" class="w-3 h-3 inline -mt-0.5"></i> Última movimentação no sistema: ${ultimoNome} — ${formatarDataHora(ultimoTs)}`
                 : '<i data-lucide="clock" class="w-3 h-3 inline -mt-0.5"></i> Nenhum acesso registrado ainda.';
 
             // Tabela ordenada do acesso mais recente para o mais antigo
