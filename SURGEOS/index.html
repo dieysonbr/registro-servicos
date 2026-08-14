@@ -1900,17 +1900,28 @@
                 });
             }
 
-            const somaPorColaborador = {};
+            // CORREÇÃO: o ranking agora usa a mesma soma "corrigida" do card
+            // "Total de Pontos" (ignora lançamentos com pontuação suspeita e
+            // conta cada protocolo repetido só 1 vez) — antes somava tudo
+            // cru, direto da nuvem, o que fazia o ranking mostrar um total
+            // diferente do que o próprio colaborador via na tela dele.
+            const registrosPorColaborador = {};
             base.forEach(r => {
                 const nomeNormalizado = normalizarNomeColaborador(r.colaborador);
                 if (!nomeNormalizado) return; // ignora registros sem colaborador válido
-                somaPorColaborador[nomeNormalizado] = (somaPorColaborador[nomeNormalizado] || 0) + (Number(r.pontos) || 0);
+                if (!registrosPorColaborador[nomeNormalizado]) registrosPorColaborador[nomeNormalizado] = [];
+                registrosPorColaborador[nomeNormalizado].push(r);
             });
 
             // Garante que todos os colaboradores cadastrados apareçam, mesmo com 0 pontos
             Object.keys(colaboradoresDB).filter(nome => nome !== MARCADOR_SEED_INICIAL).forEach(nome => {
                 const nomeNormalizado = normalizarNomeColaborador(nome);
-                if (nomeNormalizado && !(nomeNormalizado in somaPorColaborador)) somaPorColaborador[nomeNormalizado] = 0;
+                if (nomeNormalizado && !(nomeNormalizado in registrosPorColaborador)) registrosPorColaborador[nomeNormalizado] = [];
+            });
+
+            const somaPorColaborador = {};
+            Object.keys(registrosPorColaborador).forEach(nome => {
+                somaPorColaborador[nome] = calcularSomaCorrigidaMes(registrosPorColaborador[nome]);
             });
 
             const ranking = Object.entries(somaPorColaborador).sort((a, b) => b[1] - a[1]);
