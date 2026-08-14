@@ -533,7 +533,7 @@
                                 <i data-lucide="inbox" class="w-4 h-4"></i>
                             </button>
                             <div id="menuVisualizacao" class="hidden absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-lg shadow-lg z-20 overflow-hidden">
-                                <button type="button" data-modo="dia" onclick="definirVisualizacaoTabela('dia')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Somente Serviços de Hoje</button>
+                                <button type="button" data-modo="dia" onclick="definirVisualizacaoTabela('dia')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Somente Serviços do Dia Selecionado</button>
                                 <button type="button" data-modo="ultimos8" onclick="definirVisualizacaoTabela('ultimos8')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100"><i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> Últimos Serviços (máx. 8)</button>
                                 <button type="button" data-modo="todos" onclick="definirVisualizacaoTabela('todos')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100"><i data-lucide="layers" class="w-3.5 h-3.5"></i> Todos os Serviços (do mês filtrado)</button>
                                 <button type="button" data-modo="tudo" onclick="definirVisualizacaoTabela('tudo')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Todos os Protocolos (todas as datas)</button>
@@ -861,13 +861,11 @@
         }
 
         let canalRelatorioSelecionado = null;
-        // CORREÇÃO: o card "Total de Pontos" (Resumo do Mês) sempre soma TODOS
-        // os registros do mês selecionado, então a tabela agora também inicia
-        // mostrando "todos" os registros do mês por padrão — antes iniciava em
-        // "dia" (só hoje), o que escondia registros de outros dias do mês
-        // (inclusive os sem número de protocolo) mesmo eles entrando na soma,
-        // dando a impressão de que o total estava "errado".
-        let modoVisualizacaoTabela = 'todos';
+        // Modo padrão da tabela: mostra só os serviços do dia selecionado no
+        // filtro "Filtrar por Dia Específico" (que começa em hoje). Só passa
+        // a mostrar mais registros se o colaborador escolher isso explicitamente
+        // no menu "Somente Serviços do Dia Selecionado / Últimos 8 / Todos".
+        let modoVisualizacaoTabela = 'dia';
 
         function toggleMenuVisualizacao() {
             document.getElementById('menuVisualizacao').classList.toggle('hidden');
@@ -881,9 +879,9 @@
         }
 
         function atualizarIndicadorVisualizacao() {
-            const labels = { dia: 'Hoje', ultimos8: 'Últimos 8', todos: 'Todos (mês)', tudo: 'Todas as Datas' };
+            const labels = { dia: 'Dia Selecionado', ultimos8: 'Últimos 8', todos: 'Todos (mês)', tudo: 'Todas as Datas' };
             const badge = document.getElementById('badgeVisualizacao');
-            if (badge) badge.textContent = labels[modoVisualizacaoTabela] || 'Hoje';
+            if (badge) badge.textContent = labels[modoVisualizacaoTabela] || 'Dia Selecionado';
 
             document.querySelectorAll('#menuVisualizacao button[data-modo]').forEach(btn => {
                 const ativo = btn.getAttribute('data-modo') === modoVisualizacaoTabela;
@@ -983,11 +981,9 @@
             const radioMensal = document.querySelector('input[name="tipoRelatorioEnvio"][value="mensal"]');
             if (radioMensal) radioMensal.checked = true;
 
-            // Também alterna a tabela para mostrar TODOS os registros do mês
-            // selecionado (e não só os de "hoje"), para que a lista de
-            // lançamentos exibida bata com o total somado no card "Total de
-            // Pontos" — inclusive registros sem número de protocolo.
-            modoVisualizacaoTabela = 'todos';
+            // Também recalcula a tabela para o mês/dia recém-selecionado — sem
+            // forçar o modo de visualização: continua respeitando o que o
+            // colaborador tiver escolhido (Dia Selecionado / Últimos 8 / Todos).
             atualizarIndicadorVisualizacao();
 
             calcularTotais();
@@ -1445,7 +1441,12 @@
 
             let registrosExibidos = registrosMes;
             if (modoVisualizacaoTabela === 'dia') {
-                registrosExibidos = registrosMes.filter(reg => reg.data === hoje);
+                // CORREÇÃO: antes comparava sempre com "hoje" (a data de hoje
+                // fixa), então trocar o dia em "Filtrar por Dia Específico"
+                // não mudava nada na tabela. Agora usa a data que está
+                // selecionada no filtro (dataFiltroStr), que já é "hoje" por
+                // padrão mas muda quando o colaborador escolhe outro dia.
+                registrosExibidos = registrosMes.filter(reg => reg.data === dataFiltroStr);
             } else if (modoVisualizacaoTabela === 'ultimos8') {
                 registrosExibidos = registrosMes.slice(0, 8);
             } else if (modoVisualizacaoTabela === 'tudo') {
