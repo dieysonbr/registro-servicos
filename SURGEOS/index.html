@@ -1059,6 +1059,24 @@
             const editId = document.getElementById('editId').value;
             const data = document.getElementById('dataTrabalho').value;
             const protocolo = document.getElementById('protocolo').value.trim();
+
+            // Bloqueia o registro se já existir outro serviço deste mesmo
+            // colaborador com o mesmo Nº Protocolo/OS (exceto o próprio
+            // registro, quando estiver editando). Evita duplicidade que
+            // antes só era detectada depois, silenciosamente, na hora de
+            // calcular o total (ver filtrarRegistrosValidosMes).
+            if (protocolo) {
+                const duplicado = registros.find(r =>
+                    r.colaborador === tecnicoLogado &&
+                    (r.protocolo || '').trim() === protocolo &&
+                    r.firebaseId !== editId
+                );
+                if (duplicado) {
+                    alert(`Já existe um serviço registrado com o protocolo "${protocolo}".\n\nPor favor, corrija o campo Nº PROTOCOLO / OS antes de salvar.`);
+                    return;
+                }
+            }
+
             const nomeCliente = document.getElementById('nomeCliente').value.trim();
             const whatsappCliente = document.getElementById('whatsappCliente').value.trim();
             const tipoCliente = document.getElementById('tipoCliente').value;
