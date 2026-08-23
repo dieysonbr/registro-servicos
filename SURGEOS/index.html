@@ -321,7 +321,8 @@
 
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1">Nº Protocolo / OS</label>
-                            <input type="text" id="protocolo" placeholder="Ex: 2026123456" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="protocolo" placeholder="Ex: 2026123456" oninput="this.value = this.value.replace(/[^0-9]/g, ''); verificarProtocoloDuplicado();" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <p id="avisoProtocoloDuplicado" class="hidden text-xs font-bold text-red-600 mt-1">PROTOCOLO JÁ REGISTRADO, FAVOR CORRIGIR</p>
                         </div>
                     </div>
 
@@ -1051,6 +1052,32 @@
             document.getElementById('infoPontos').innerText = `ℹ️ Serviço ${tipoExibido}: ${pts} pontos por unidade.`;
         }
 
+        // Verifica em tempo real, enquanto o colaborador digita, se o protocolo
+        // já existe em outro serviço dele mesmo (exceto o registro em edição).
+        // Mostra/esconde o aviso "PROTOCOLO JÁ REGISTRADO, FAVOR CORRIGIR" e
+        // destaca o campo em vermelho. A checagem definitiva (que realmente
+        // bloqueia o envio) continua no submit do formulário, logo abaixo.
+        function verificarProtocoloDuplicado() {
+            const campo = document.getElementById('protocolo');
+            const aviso = document.getElementById('avisoProtocoloDuplicado');
+            const editId = document.getElementById('editId').value;
+            const protocolo = campo.value.trim();
+
+            const duplicado = protocolo && registros.find(r =>
+                r.colaborador === tecnicoLogado &&
+                (r.protocolo || '').trim() === protocolo &&
+                r.firebaseId !== editId
+            );
+
+            if (duplicado) {
+                aviso.classList.remove('hidden');
+                campo.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+            } else {
+                aviso.classList.add('hidden');
+                campo.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+            }
+        }
+
         // Salvar ou Atualizar no Firebase (Somente para o colaborador logado)
         document.getElementById('formServico').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1072,7 +1099,7 @@
                     r.firebaseId !== editId
                 );
                 if (duplicado) {
-                    alert(`Já existe um serviço registrado com o protocolo "${protocolo}".\n\nPor favor, corrija o campo Nº PROTOCOLO / OS antes de salvar.`);
+                    alert(`PROTOCOLO JÁ REGISTRADO, FAVOR CORRIGIR\n\nJá existe um serviço seu salvo com o protocolo "${protocolo}".`);
                     return;
                 }
             }
