@@ -1111,6 +1111,11 @@
                 subcategoria,
                 quantidade: 1,
                 pontos: totalPontos,
+                // Marca se este registro veio do campo de pontos manuais da RV.
+                // Usado em filtrarRegistrosValidosMes para NÃO tratar como
+                // "suspeito" um valor alto quando ele foi mesmo digitado de
+                // propósito (o campo existe justamente para valores grandes).
+                manual: (pontosManuaisInput !== '' && !isNaN(pontosManuaisInput)),
                 criadoEm: Date.now()
             };
 
@@ -1321,7 +1326,13 @@
             const protocolosContados = new Set();
             return listaOrdenada.filter(reg => {
                 const pts = Number(reg.pontos) || 0;
-                if (pts > LIMITE_PONTOS_SUSPEITO_GLOBAL) return false;
+                // Só trata como "suspeito" um valor alto quando ele NÃO veio do
+                // campo de pontos manuais da RV (reg.manual). Um registro
+                // manual acima de 150 pts é o uso normal e esperado do campo
+                // (ex: lançar de uma vez o total de RV já acumulado) — excluí-lo
+                // do total oficial é o próprio bug que fazia o "Total de
+                // Pontos" ficar menor que a "Soma Bruta na Nuvem" na Auditoria.
+                if (!reg.manual && pts > LIMITE_PONTOS_SUSPEITO_GLOBAL) return false;
                 const protocolo = (reg.protocolo || '').trim();
                 if (protocolo) {
                     if (protocolosContados.has(protocolo)) return false;
@@ -1415,6 +1426,39 @@
             // Auditoria sempre, não só quando alguém aperta "Recalcular".
             totalMes = calcularSomaCorrigidaMes(registrosMes);
             pontosTarefasMes = totalMes;
+
+            // PRÉVIA AO VIVO: soma o valor digitado no campo "INSERIR TOTAL DE
+            // PONTOS DA RV MANUALMENTE" aos totais já exibidos ANTES mesmo de o
+            // registro ser salvo — assim o colaborador já vê o total atualizado
+            // enquanto digita, em vez de precisar clicar em "Registrar Serviço"
+            // primeiro. A soma respeita a Data do Serviço selecionada no
+            // formulário: só entra no Total Dia se a data bater com o dia
+            // filtrado, só entra no Total Semana se cair na semana filtrada, e
+            // só entra no Total Mês/Pontos Tarefas Mês se cair no mês filtrado
+            // — exatamente como aconteceria depois de salvo de verdade.
+            const pontosManuaisPreviewInput = document.getElementById('pontosManuais').value;
+            const pontosManuaisPreview = (pontosManuaisPreviewInput !== '' && !isNaN(pontosManuaisPreviewInput))
+                ? Number(pontosManuaisPreviewInput)
+                : 0;
+
+            if (pontosManuaisPreview > 0) {
+                const dataTrabalhoStr = document.getElementById('dataTrabalho').value;
+                if (dataTrabalhoStr) {
+                    const [anoT, mesT, diaT] = dataTrabalhoStr.split('-').map(Number);
+                    const dataTrabalhoObj = new Date(anoT, mesT - 1, diaT);
+
+                    if (dataTrabalhoStr === dataFiltroStr) {
+                        totalDiaSelecionado += pontosManuaisPreview;
+                    }
+                    if (dataTrabalhoObj >= primeiraDataSemana && dataTrabalhoObj <= ultimaDataSemana) {
+                        totalSemana += pontosManuaisPreview;
+                    }
+                    if (mesT === mesF && anoT === anoF) {
+                        totalMes += pontosManuaisPreview;
+                        pontosTarefasMes += pontosManuaisPreview;
+                    }
+                }
+            }
 
             const tipoOrdem = document.getElementById('ordemHistorico').value;
             // Comparador extraído para função própria para poder ser reaproveitado
