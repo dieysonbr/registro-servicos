@@ -1476,35 +1476,23 @@
             totalMes = calcularSomaCorrigidaMes(registrosMes);
             pontosTarefasMes = totalMes;
 
-            // PRÉVIA AO VIVO: soma aos totais já exibidos os pontos do registro
-            // que está sendo preenchido no formulário AGORA, ANTES mesmo de ser
-            // salvo — assim o colaborador já vê o total atualizado enquanto
-            // digita/seleciona, em vez de precisar clicar em "Registrar Serviço"
-            // primeiro. Vale tanto para pontos manuais quanto para o valor
-            // automático do Tipo de Serviço/Subcategoria selecionado (mesmo
-            // cálculo usado de verdade no envio do formulário, mais abaixo).
-            // A soma respeita a Data do Serviço selecionada: só entra no Total
-            // Dia se a data bater com o dia filtrado, só entra no Total Semana
-            // se cair na semana filtrada, e só entra no Total Mês/Pontos
-            // Tarefas Mês se cair no mês filtrado — exatamente como
-            // aconteceria depois de salvo de verdade. Não conta se já existir
-            // um registro em edição (editId preenchido), para não somar duas
-            // vezes o mesmo serviço que já está contado em meusRegistros.
+            // PRÉVIA AO VIVO: soma o valor digitado no campo "INSERIR TOTAL DE
+            // PONTOS DA RV MANUALMENTE" aos totais já exibidos ANTES mesmo de o
+            // registro ser salvo. IMPORTANTE: isso só é possível para o campo
+            // manual porque ele é o único que fica realmente vazio por padrão -
+            // já existiu uma versão que também previa os pontos automáticos do
+            // Tipo de Serviço, mas como "Tipo de Serviço" sempre vem com
+            // SIMPLES pré-selecionado (nunca fica vazio), isso somava 39 pts
+            // fantasmas em Total do Dia o tempo todo, mesmo com o formulário
+            // parado e sem nenhum registro de verdade sendo feito. Não dá pra
+            // reproduzir essa prévia para o valor automático sem esse mesmo bug,
+            // então ela fica só para o campo manual mesmo.
             const editIdPreview = document.getElementById('editId').value;
             let pontosPreview = 0;
             if (!editIdPreview) {
                 const pontosManuaisPreviewInput = document.getElementById('pontosManuais').value;
                 if (pontosManuaisPreviewInput !== '' && !isNaN(pontosManuaisPreviewInput)) {
                     pontosPreview = Number(pontosManuaisPreviewInput);
-                } else {
-                    const tipoPreview = document.getElementById('tipoServico').value;
-                    const subPreview = document.getElementById('subcategoriaServico').value;
-                    pontosPreview = 39;
-                    if (tipoPreview === 'TROCA FLAT') {
-                        pontosPreview = 77;
-                        if (subPreview === 'FTTX') pontosPreview = 83;
-                        else if (subPreview === 'FTTA') pontosPreview = 69;
-                    }
                 }
             }
 
