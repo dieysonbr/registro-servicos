@@ -1043,13 +1043,17 @@
 
             if (tipo === 'SIMPLES') {
                 document.getElementById('infoPontos').innerText = `ℹ️ Serviço ${tipoExibido}: 39 pontos por unidade.`;
-                return;
+            } else {
+                let pts = 77;
+                if (sub === 'FTTX') pts = 83;
+                if (sub === 'FTTA') pts = 69;
+                document.getElementById('infoPontos').innerText = `ℹ️ Serviço ${tipoExibido}: ${pts} pontos por unidade.`;
             }
 
-            let pts = 77;
-            if (sub === 'FTTX') pts = 83;
-            if (sub === 'FTTA') pts = 69;
-            document.getElementById('infoPontos').innerText = `ℹ️ Serviço ${tipoExibido}: ${pts} pontos por unidade.`;
+            // Trocar o tipo/subcategoria muda o valor que a prévia ao vivo dos
+            // totais (dentro de calcularTotais) vai considerar - recalcula na
+            // hora para o card de totais já refletir a nova seleção.
+            if (typeof tecnicoLogado !== 'undefined' && tecnicoLogado) calcularTotais();
         }
 
         // Verifica em tempo real, enquanto o colaborador digita, se o protocolo
@@ -1472,35 +1476,53 @@
             totalMes = calcularSomaCorrigidaMes(registrosMes);
             pontosTarefasMes = totalMes;
 
-            // PRÉVIA AO VIVO: soma o valor digitado no campo "INSERIR TOTAL DE
-            // PONTOS DA RV MANUALMENTE" aos totais já exibidos ANTES mesmo de o
-            // registro ser salvo — assim o colaborador já vê o total atualizado
-            // enquanto digita, em vez de precisar clicar em "Registrar Serviço"
-            // primeiro. A soma respeita a Data do Serviço selecionada no
-            // formulário: só entra no Total Dia se a data bater com o dia
-            // filtrado, só entra no Total Semana se cair na semana filtrada, e
-            // só entra no Total Mês/Pontos Tarefas Mês se cair no mês filtrado
-            // — exatamente como aconteceria depois de salvo de verdade.
-            const pontosManuaisPreviewInput = document.getElementById('pontosManuais').value;
-            const pontosManuaisPreview = (pontosManuaisPreviewInput !== '' && !isNaN(pontosManuaisPreviewInput))
-                ? Number(pontosManuaisPreviewInput)
-                : 0;
+            // PRÉVIA AO VIVO: soma aos totais já exibidos os pontos do registro
+            // que está sendo preenchido no formulário AGORA, ANTES mesmo de ser
+            // salvo — assim o colaborador já vê o total atualizado enquanto
+            // digita/seleciona, em vez de precisar clicar em "Registrar Serviço"
+            // primeiro. Vale tanto para pontos manuais quanto para o valor
+            // automático do Tipo de Serviço/Subcategoria selecionado (mesmo
+            // cálculo usado de verdade no envio do formulário, mais abaixo).
+            // A soma respeita a Data do Serviço selecionada: só entra no Total
+            // Dia se a data bater com o dia filtrado, só entra no Total Semana
+            // se cair na semana filtrada, e só entra no Total Mês/Pontos
+            // Tarefas Mês se cair no mês filtrado — exatamente como
+            // aconteceria depois de salvo de verdade. Não conta se já existir
+            // um registro em edição (editId preenchido), para não somar duas
+            // vezes o mesmo serviço que já está contado em meusRegistros.
+            const editIdPreview = document.getElementById('editId').value;
+            let pontosPreview = 0;
+            if (!editIdPreview) {
+                const pontosManuaisPreviewInput = document.getElementById('pontosManuais').value;
+                if (pontosManuaisPreviewInput !== '' && !isNaN(pontosManuaisPreviewInput)) {
+                    pontosPreview = Number(pontosManuaisPreviewInput);
+                } else {
+                    const tipoPreview = document.getElementById('tipoServico').value;
+                    const subPreview = document.getElementById('subcategoriaServico').value;
+                    pontosPreview = 39;
+                    if (tipoPreview === 'TROCA FLAT') {
+                        pontosPreview = 77;
+                        if (subPreview === 'FTTX') pontosPreview = 83;
+                        else if (subPreview === 'FTTA') pontosPreview = 69;
+                    }
+                }
+            }
 
-            if (pontosManuaisPreview > 0) {
+            if (pontosPreview > 0) {
                 const dataTrabalhoStr = document.getElementById('dataTrabalho').value;
                 if (dataTrabalhoStr) {
                     const [anoT, mesT, diaT] = dataTrabalhoStr.split('-').map(Number);
                     const dataTrabalhoObj = new Date(anoT, mesT - 1, diaT);
 
                     if (dataTrabalhoStr === dataFiltroStr) {
-                        totalDiaSelecionado += pontosManuaisPreview;
+                        totalDiaSelecionado += pontosPreview;
                     }
                     if (dataTrabalhoObj >= primeiraDataSemana && dataTrabalhoObj <= ultimaDataSemana) {
-                        totalSemana += pontosManuaisPreview;
+                        totalSemana += pontosPreview;
                     }
                     if (mesT === mesF && anoT === anoF) {
-                        totalMes += pontosManuaisPreview;
-                        pontosTarefasMes += pontosManuaisPreview;
+                        totalMes += pontosPreview;
+                        pontosTarefasMes += pontosPreview;
                     }
                 }
             }
