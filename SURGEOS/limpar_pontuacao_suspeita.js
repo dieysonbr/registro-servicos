@@ -13,6 +13,11 @@
 // a correção de duplicidade vale só para lançamentos NOVOS a partir de
 // agora — o formulário já bloqueia isso na hora de salvar).
 //
+// ESCOPO: por decisão explícita, essa limpeza retroativa vale SOMENTE para
+// o colaborador definido em COLABORADOR_ALVO (todos os meses dele). Os
+// demais colaboradores não têm nenhum dado antigo tocado - só passam a
+// valer as novas regras do formulário a partir de agora.
+//
 // IMPORTANTE - ORDEM DE EXECUÇÃO:
 //   1) node backup_servicos.js              (gera backup de tudo antes de mexer)
 //   2) node migrar_flag_manual.js           (marca lançamentos manuais legítimos
@@ -33,6 +38,7 @@ const db = getFirestore();
 
 const LIMITE_PONTOS_SUSPEITO_GLOBAL = 150;
 const LIMITE_BATCH = 400;
+const COLABORADOR_ALVO = "DIEYSON DE PAULA";
 
 function perguntar(pergunta) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -40,12 +46,13 @@ function perguntar(pergunta) {
 }
 
 async function main() {
-  console.log("Lendo coleção 'servicos' do Firestore...\n");
+  console.log(`Lendo coleção 'servicos' do Firestore (restrito a "${COLABORADOR_ALVO}")...\n`);
   const snapshot = await db.collection("servicos").get();
 
   const invalidos = [];
   snapshot.forEach((doc) => {
     const dados = doc.data();
+    if (dados.colaborador !== COLABORADOR_ALVO) return;
     const pts = Number(dados.pontos) || 0;
 
     // Único critério: pontuação suspeita e NÃO marcada como manual

@@ -31,8 +31,14 @@ const db = getFirestore();
 const LIMITE_PONTOS_SUSPEITO_GLOBAL = 150;
 const LIMITE_BATCH = 400;
 
+// Limpeza retroativa vale SOMENTE para este colaborador (todos os meses) -
+// os demais colaboradores não têm dados antigos alterados, só passam a
+// valer as novas regras do formulário a partir de agora. Nome exatamente
+// como está salvo no campo "colaborador" da coleção "servicos".
+const COLABORADOR_ALVO = "DIEYSON DE PAULA";
+
 async function main() {
-  console.log("Lendo coleção 'servicos' do Firestore...");
+  console.log(`Lendo coleção 'servicos' do Firestore (restrito a "${COLABORADOR_ALVO}")...`);
   const snapshot = await db.collection("servicos").get();
 
   let candidatos = 0;
@@ -42,6 +48,7 @@ async function main() {
 
   for (const doc of snapshot.docs) {
     const dados = doc.data();
+    if (dados.colaborador !== COLABORADOR_ALVO) continue;
     const pts = Number(dados.pontos) || 0;
 
     if (pts > LIMITE_PONTOS_SUSPEITO_GLOBAL) {
