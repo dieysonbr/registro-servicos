@@ -1305,8 +1305,8 @@
         }
 
         // Formata um número de telefone para o padrão aceito pela API do WhatsApp
-        // (55 + DDD + número), funcionando tanto para números digitados com DDD
-        // quanto sem DDD (nesse caso, usa o DDD padrão informado).
+        // (DDD + número, sem o código do país), funcionando tanto para números
+        // digitados com DDD quanto sem DDD (nesse caso, usa o DDD padrão informado).
         function formatarNumeroWhatsapp(numero, dddPadrao = '48') {
             if (!numero) return '';
 
@@ -1318,7 +1318,7 @@
                 digitos = digitos.substring(1);
             }
 
-            // Se já vier com o código do país (55), separa para tratar o restante
+            // Se vier com o código do país (55), remove para não duplicar/adicionar
             if (digitos.startsWith('55') && (digitos.length === 12 || digitos.length === 13)) {
                 digitos = digitos.substring(2);
             }
@@ -1328,7 +1328,7 @@
                 digitos = dddPadrao + digitos;
             }
 
-            return '55' + digitos;
+            return digitos;
         }
 
         function enviarMensagemCliente(whatsapp, nome) {
