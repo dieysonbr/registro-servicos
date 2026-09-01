@@ -2,43 +2,146 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Só permite acesso a quem tiver uma sessão autenticada no Firebase
-    // (mesmo que anônima, criada automaticamente pelo site). Isso bloqueia
-    // quem tentar ler/escrever direto na API do Firestore sem passar pelo
-    // aplicativo.
-    function autenticado() {
-      return request.auth != null;
+    // ------------------------------------------------------------------
+    // Identidade
+    // ------------------------------------------------------------------
+    // A sessão anônima foi removida. Antes, `request.auth != null` era
+    // satisfeito por qualquer visitante — o site criava a sessão sozinho ao
+    // carregar —, então toda regra baseada nela autorizava o mundo inteiro.
+    // Agora exigimos o provedor 'password': só quem passou por
+    // signInWithEmailAndPassword tem um token válido aqui.
+    function logado() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'password';
     }
 
-    // ---- Colaboradores (login, senha, último acesso) ----
-    match /colaboradores/{nomeColaborador} {
-      allow read: if autenticado();
-      allow create, update: if autenticado()
-        && request.resource.data.senha is string
-        && request.resource.data.precisaTrocar is bool;
-      allow delete: if autenticado();
+    // Administrador é uma custom claim no token, gravável apenas pelo Admin
+    // SDK (conceder_admin.js). Substitui o documento admin/config, que
+    // guardava a senha em texto puro e era legível pelo navegador.
+    function admin() {
+      return logado() && request.auth.token.admin == true;
     }
 
-    // ---- Registros de serviço ----
+    // O documento do colaborador guarda o uid do dono. É assim que amarramos
+    // um registro a quem está autenticado, em vez de confiar no nome que o
+    // cliente mandou.
+    //
+    // O chamador precisa garantir que `nome` é string ANTES de chamar: montar
+    // um path com valor de outro tipo é erro de avaliação, não negação limpa.
+    function dono(nome) {
+      return logado()
+        && get(/databases/$(database)/documents/colaboradores/$(nome)).data.uid == request.auth.uid;
+    }
+
+    // ------------------------------------------------------------------
+    // Lista pública de nomes
+    // ------------------------------------------------------------------
+    // A tela de login preenche o seletor de nomes ANTES de existir sessão.
+    //
+    // Decisão consciente: os nomes completos ficam legíveis sem autenticação.
+    // Eles já apareciam nesse seletor antes desta mudança, mas aqui passam a
+    // ser coletáveis em massa por quem conhecer o projeto. O caminho para
+    // fechar isso é o App Check (atestação de origem do app), que não altera
+    // estas regras — entra como exigência adicional no Console.
+    match /publico/colaboradores {
+      allow get: if true;
+      allow write: if admin()
+        && request.resource.data.keys().hasOnly(['nomes', 'atualizadoEm'])
+        && request.resource.data.nomes is list
+        && request.resource.data.nomes.size() <= 500;
+    }
+
+    // ------------------------------------------------------------------
+    // Colaboradores
+    // ------------------------------------------------------------------
+    // Sem campo `senha`: a credencial vive no Firebase Auth, que faz o hash e
+    // nunca a devolve. Restam uid, precisaTrocar, ultimoAcesso e flags de UI —
+    // nada secreto. Por isso a leitura entre colegas é segura, e o ranking
+    // continua funcionando.
+    match /colaboradores/{nome} {
+      allow read: if logado();
+
+      // Campos que o próprio colaborador pode manter. `uid` e `precisaTrocar`
+      // ficam de fora de propósito:
+      //   - uid: sem essa trava, um técnico apontaria o documento de outro
+      //     para si mesmo e herdaria os serviços dele;
+      //   - precisaTrocar: se o dono pudesse desligar, anularia a rotação
+      //     forçada de senha que a migração existe para garantir.
+      function camposDoDono() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['ultimoAcesso', 'usouPontosManuaisRV']);
+      }
+
+      allow update: if (dono(nome) && camposDoDono()) || admin();
+
+      allow create, delete: if admin();
+    }
+
+    // ------------------------------------------------------------------
+    // Registros de serviço
+    // ------------------------------------------------------------------
     match /servicos/{servicoId} {
-      allow read: if autenticado();
-      allow create: if autenticado()
+
+      // Uma única validação, aplicada a create E update. Tê-las separadas foi
+      // o que permitiu, na versão anterior destas regras, criar um registro
+      // válido com pontos: 1 e depois atualizá-lo para pontos: 999999 — ou
+      // para uma string, quebrando todos os totais que assumem número.
+      // Nomes conferidos contra o objeto realmente gravado (index.html:1152):
+      // colaborador, data, protocolo, nomeCliente, whatsappCliente,
+      // tipoCliente, tipo, subcategoria, quantidade, pontos, manual, criadoEm.
+      function texto(d, campo, max) {
+        return !(campo in d) || (d[campo] is string && d[campo].size() <= max);
+      }
+
+      function valido() {
+        let d = request.resource.data;
+        return d.colaborador is string
+          && d.colaborador.size() > 0 && d.colaborador.size() <= 120
+          // Teto de sanidade, não de política. O app já trata 150 como
+          // limiar de suspeita (LIMITE_PONTOS_SUSPEITO_GLOBAL), mas permite
+          // salvar acima disso após confirmação, e o campo de RV manual
+          // existe justamente para totais grandes — o próprio placeholder
+          // usa 2359 como exemplo. Travar em 150 aqui quebraria esses dois
+          // fluxos legítimos. As regras impedem o absurdo; a auditoria do
+          // app continua dona da política.
+          && d.pontos is number
+          && d.pontos >= 0 && d.pontos <= 100000
+          && (!('manual' in d) || d.manual is bool)
+          && (!('quantidade' in d) || (d.quantidade is number && d.quantidade >= 0 && d.quantidade <= 1000))
+          && (!('criadoEm' in d) || d.criadoEm is number)
+          && texto(d, 'data', 40)
+          && texto(d, 'protocolo', 60)
+          && texto(d, 'nomeCliente', 200)
+          && texto(d, 'whatsappCliente', 30)
+          && texto(d, 'tipoCliente', 60)
+          && texto(d, 'tipo', 120)
+          && texto(d, 'subcategoria', 120)
+          && d.keys().size() <= 20;
+      }
+
+      // Leitura ampla: ranking, auditoria e as médias da equipe dependem de
+      // enxergar a produção de todos.
+      allow read: if logado();
+
+      // `is string` vem antes de dono(), que usa o valor para montar um path.
+      allow create: if logado()
         && request.resource.data.colaborador is string
-        && request.resource.data.pontos is number;
-      allow update, delete: if autenticado();
+        && dono(request.resource.data.colaborador)
+        && valido();
+
+      // Mesma validação do create, mais a autoria travada. Admin entra aqui
+      // porque o painel de auditoria corrige registro de terceiro — sem isso
+      // ele só conseguiria apagar, e a pressão prática seria afrouxar a regra.
+      allow update: if request.resource.data.colaborador == resource.data.colaborador
+        && (dono(resource.data.colaborador) || admin())
+        && valido();
+
+      allow delete: if dono(resource.data.colaborador) || admin();
     }
 
-    // ---- Configuração do administrador ----
-    // A senha do admin pode ser LIDA por qualquer sessão autenticada (é
-    // assim que o botão "Área do Administrador" confere a senha), mas
-    // NUNCA pode ser escrita pelo navegador — só pelo Admin SDK
-    // (script configurar_senha_admin.js), rodando localmente.
-    match /admin/config {
-      allow get: if autenticado();
-      allow write: if false;
-    }
-
-    // Bloqueia qualquer outra coleção/documento não previsto explicitamente
+    // ------------------------------------------------------------------
+    // Tudo o mais é negado, inclusive o antigo admin/config.
+    // ------------------------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
     }
