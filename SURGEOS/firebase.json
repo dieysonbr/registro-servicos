@@ -4,7 +4,15 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "*.js",
+      "*.json",
+      "*.txt",
+      "firestore.rules",
+      "firestore.indexes.json",
+      "senhas_temporarias.txt",
+      "backup_*.json",
+      "CORRIGIR COLABORADOR/**"
     ],
     "headers": [
       {
@@ -15,6 +23,12 @@
             "value": "no-cache, no-store, must-revalidate"
           }
         ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/manutencao.html"
       }
     ]
   },
