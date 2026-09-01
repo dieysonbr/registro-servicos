@@ -322,9 +322,18 @@
                         <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Colaborador Autenticado</span>
                         <span id="labelColaboradorLogado" class="text-sm font-black text-emerald-900"></span>
                     </div>
-                    <button onclick="fazerLogout()" class="text-xs font-bold text-red-600 hover:text-red-800 underline bg-white px-2.5 py-1 rounded-lg border border-red-200">
-                        Sair / Trocar
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <!-- Só aparece pra contas com a custom claim admin=true
+                             (concedida via conceder_admin.js). Não é uma lista
+                             de nomes fixa aqui no código — a visibilidade é
+                             decidida em liberarPainelPrincipal(). -->
+                        <button id="btnPainelAdminTab" onclick="irParaPainelAdmin()" style="display:none" class="inline-flex items-center gap-1 text-xs font-bold text-blue-700 hover:text-blue-900 underline bg-white px-2.5 py-1 rounded-lg border border-blue-200">
+                            <i data-lucide="shield" class="w-3.5 h-3.5"></i> Administrador
+                        </button>
+                        <button onclick="fazerLogout()" class="text-xs font-bold text-red-600 hover:text-red-800 underline bg-white px-2.5 py-1 rounded-lg border border-red-200">
+                            Sair / Trocar
+                        </button>
+                    </div>
                 </div>
 
                 <h2 id="tituloForm" class="text-xl font-bold text-slate-900 flex items-center gap-2"><i data-lucide="file-plus-2" class="w-5 h-5 text-blue-600"></i> Novo Registro</h2>
@@ -957,7 +966,7 @@
             }
         }
 
-        function liberarPainelPrincipal() {
+        async function liberarPainelPrincipal() {
             document.getElementById('telaAutenticacaoColaborador').classList.add('hidden');
             const painel = document.getElementById('painelPrincipalSistema');
             painel.classList.remove('hidden');
@@ -966,6 +975,21 @@
             document.getElementById('labelColaboradorLogado').innerText = tecnicoLogado;
             atualizarAvisoPontosManuaisRV();
             calcularTotais();
+
+            // Aba "Administrador" dentro do próprio painel: só aparece pra
+            // quem tem a custom claim admin=true no token. Não é uma checagem
+            // de nome — é a mesma permissão concedida por conceder_admin.js.
+            const btnAdmin = document.getElementById('btnPainelAdminTab');
+            if (btnAdmin) {
+                try {
+                    const usuario = window.auth.currentUser;
+                    const token = usuario ? await usuario.getIdTokenResult() : null;
+                    btnAdmin.style.display = (token && token.claims.admin === true) ? 'inline-flex' : 'none';
+                } catch (e) {
+                    console.error("Erro ao verificar permissão de administrador:", e);
+                    btnAdmin.style.display = 'none';
+                }
+            }
         }
 
         async function fazerLogout() {
@@ -2093,6 +2117,17 @@
             } catch (e) {
                 alert("Erro ao verificar a permissão de administrador: " + traduzirErroAuth(e));
             }
+        }
+
+        // Atalho usado pela aba "Administrador" dentro do painel do
+        // colaborador. A claim já foi conferida em liberarPainelPrincipal()
+        // pra decidir se o botão aparece — aqui só troca de tela.
+        function irParaPainelAdmin() {
+            adminLogado = true;
+            document.getElementById('painelPrincipalSistema').classList.add('hidden');
+            document.getElementById('painelPrincipalSistema').classList.remove('grid');
+            document.getElementById('painelAdmin').classList.remove('hidden');
+            renderizarTabelaAdmin();
         }
 
         function sairAdmin() {
