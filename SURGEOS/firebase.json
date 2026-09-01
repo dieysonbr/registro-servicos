@@ -24,12 +24,6 @@
           }
         ]
       }
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/manutencao.html"
-      }
     ]
   },
   "firestore": {
