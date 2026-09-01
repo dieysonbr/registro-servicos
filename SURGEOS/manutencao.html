@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Registro de O.S — em manutenção</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232563eb'/%3E%3Crect x='25' y='27' width='50' height='7' rx='3.5' fill='white'/%3E%3Ccircle cx='50' cy='39' r='11' fill='white'/%3E%3Cpath d='M30 86v-8a20 20 0 0 1 40 0v8' stroke='white' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  /* Sem Tailwind, sem Firebase, sem fonte externa: esta página tem que
+     funcionar exatamente quando o resto do sistema não está funcionando.
+     Qualquer dependência aqui é um jeito de a página de erro também falhar. */
+
+  :root {
+    --navy-900: #0b1730;
+    --navy-800: #0f1e3c;
+    --navy-700: #16294d;
+    --accent:   #2563eb;
+    --ink:      #0f172a;
+    --raio:     10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background:
+      radial-gradient(120% 90% at 50% 38%, var(--navy-700) 0%, var(--navy-800) 45%, var(--navy-900) 100%),
+      var(--navy-800);
+    color: #e2e8f0;
+    /* Sem Roboto nomeada: no Android o system-ui já resolve para ela, e
+       listá-la explicitamente só adota uma face genérica por hábito. */
+    font: 400 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* A mesma treliça isométrica do sistema, em SVG repetido — sem canvas e
+     sem script, para não depender de JS. Estática: uma página de manutenção
+     não deve chamar atenção para si. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='104' viewBox='0 0 120 104'%3E%3Cg fill='none' stroke='%2394a3b8' stroke-opacity='.16' stroke-width='1'%3E%3Cpath d='M30 0 L60 17 L60 52 L30 69 L0 52 L0 17 Z'/%3E%3Cpath d='M90 0 L120 17 L120 52 L90 69 L60 52 L60 17 Z'/%3E%3Cpath d='M30 69 L60 86 L60 121 L30 138 L0 121 L0 86 Z'/%3E%3Cpath d='M60 17 L60 52 M60 52 L30 69 M60 52 L90 69'/%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  main {
+    position: relative;
+    width: 100%;
+    max-width: 30rem;
+    background: #fff;
+    color: var(--ink);
+    border-radius: var(--raio);
+    padding: 2.25rem 2rem;
+    box-shadow: 0 1px 2px rgba(5,12,28,.3), 0 18px 40px -12px rgba(5,12,28,.5);
+  }
+
+  .selo {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .74rem;
+    font-weight: 650;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #b45309;
+    background: #fef3c7;
+    border-radius: 999px;
+    padding: .3rem .7rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .selo span {
+    width: .45rem;
+    height: .45rem;
+    border-radius: 50%;
+    background: #d97706;
+  }
+
+  h1 {
+    margin: 0 0 .8rem;
+    font-size: clamp(1.6rem, 5vw, 2rem);
+    /* Entrelinha 1.0 e tracking negativo: a mesma regra tipográfica das
+       referências salvas em referencia/estilos. */
+    line-height: 1;
+    letter-spacing: -0.035em;
+    font-weight: 640;
+    color: #0b1220;
+  }
+
+  p {
+    margin: 0 0 1rem;
+    color: #46556e;
+    font-size: .95rem;
+  }
+
+  p strong { color: #26374f; font-weight: 640; }
+
+  /* Dois degraus de texto, não quatro: corpo a .95rem e apoio a .76rem,
+     razão de 1.25. Antes havia .93 e .95 convivendo — passos diferentes
+     para o mesmo tamanho aparente, que é hierarquia nenhuma. */
+  ol {
+    margin: 0 0 .35rem;
+    padding-left: 1.15rem;
+    color: #46556e;
+    font-size: .95rem;
+  }
+
+  li { margin-bottom: .45rem; }
+  li::marker { color: var(--accent); font-weight: 700; }
+
+  .aviso {
+    margin-top: 1.6rem;
+    padding-top: 1.15rem;
+    border-top: 1px solid #e4e9f0;
+    font-size: .95rem;
+    color: #64748b;
+  }
+
+  .aviso b { color: #46556e; font-weight: 640; }
+
+  footer {
+    position: relative;
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: .76rem;
+    color: rgba(226,232,240,.62);
+  }
+
+  ::selection { background: var(--accent); color: #fff; }
+  main ::selection { background: #bfdbfe; color: var(--ink); }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="selo"><span></span>Manutenção em andamento</div>
+
+  <h1>O sistema volta em instantes</h1>
+
+  <p>
+    Estamos atualizando a forma como o Registro de O.S guarda as senhas.
+    <strong>Nenhum serviço lançado foi perdido</strong> — todos os registros
+    continuam salvos.
+  </p>
+
+  <p>Quando o sistema voltar:</p>
+
+  <ol>
+    <li>Você vai receber uma <strong>senha temporária</strong> do administrador.</li>
+    <li>Entre com ela, escolhendo seu nome na lista como sempre.</li>
+    <li>O sistema vai pedir que você crie uma <strong>senha pessoal</strong> de pelo menos 6 caracteres.</li>
+  </ol>
+
+  <div class="aviso">
+    <b>Sua senha antiga não funciona mais.</b> Ela ficava guardada de um jeito
+    que outras pessoas conseguiam ler. Por isso todas foram trocadas — se você
+    usava essa mesma senha em outro lugar, vale trocar lá também.
+  </div>
+</main>
+
+<footer>Registro de O.S · Técnico em Manutenção</footer>
+
+</body>
+</html>
