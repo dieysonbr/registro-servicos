@@ -1,3 +1,19 @@
+# Credencial do Admin SDK. Ignora todas as regras de segurança do Firestore —
+# quem tem este arquivo é dono do banco. Nunca versionar.
 serviceAccountKey.json
-auditoria_referencia.txt
+
+# Dependências: eram 5.616 dos 5.635 arquivos versionados do repositório.
+# O firebase.json já as excluía do deploy; só pesavam no git.
+node_modules/
+
+# Senhas temporárias geradas por migrar_para_auth.js. Apagar depois de
+# distribuir para os técnicos.
+senhas_temporarias.txt
+
+# Backups automáticos e dumps locais
+backup_pre_auth_*.json
 backup_servicos_*.json
+auditoria_referencia.txt
+
+# Cache local do Firebase CLI
+.firebase/
