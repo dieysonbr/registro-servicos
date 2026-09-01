@@ -163,12 +163,11 @@
                 <div id="divGrupoSenhaLogin">
                     <label class="block text-sm font-bold text-slate-700 mb-1">Senha de Acesso</label>
                     <input type="password" id="inputSenhaLogin" placeholder="Digite sua senha" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <p class="text-xs text-slate-500 mt-1">Senha padrão inicial para novos cadastros: <b class="text-slate-700">123456</b></p>
                 </div>
 
                 <div id="divGrupoNovaSenha" class="hidden p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
                     <h3 class="text-xs font-bold text-amber-800 uppercase tracking-wider">🔒 Alteração de Senha Obrigatória (Primeiro Acesso)</h3>
-                    <p class="text-xs text-amber-700">Você está utilizando a senha padrão. Por favor, cadastre uma nova senha pessoal para continuar.</p>
+                    <p class="text-xs text-amber-700">Você entrou com uma senha temporária. Defina agora uma senha pessoal, com no mínimo 6 caracteres, para continuar.</p>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Nova Senha</label>
                         <input type="password" id="inputNovaSenhaCadastro" placeholder="Digite sua nova senha" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
@@ -187,19 +186,12 @@
             </div>
             </div>
 
-            <!-- CADASTRO DE NOVO COLABORADOR NA ÁREA PRINCIPAL: qualquer pessoa pode
-                 criar seu próprio acesso aqui, sem precisar da senha de admin. Só a
-                 EXCLUSÃO de um colaborador continua restrita ao Painel Administrativo. -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3 mt-4">
-                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> Cadastrar Novo Colaborador</h3>
-                <div class="flex flex-col md:flex-row gap-2">
-                    <input type="text" id="inputNomeNovoColab" placeholder="Nome completo do colaborador" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button onclick="cadastrarColaborador()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition">
-                        Cadastrar
-                    </button>
-                </div>
-                <p class="text-xs text-slate-500">Senha inicial padrão: <b class="text-slate-700">123456</b> — o colaborador será obrigado a trocá-la no primeiro acesso.</p>
-            </div>
+            <!-- O formulário de cadastro que ficava aqui foi movido para o Painel
+                 Administrativo. Nesta tela, aberta a qualquer visitante, ele deixava
+                 qualquer pessoa criar o próprio acesso — e a senha padrão estava
+                 impressa ao lado. As regras do Firestore agora recusam a criação por
+                 quem não é administrador, então o formulário aqui só produziria um
+                 erro; tirá-lo é mais honesto do que deixá-lo falhar. -->
         </div>
 
         <!-- MODAL: LOGIN DO ADMINISTRADOR -->
@@ -229,7 +221,14 @@
             </div>
 
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                <p class="text-xs text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i> O cadastro de novos colaboradores agora é feito direto na tela principal de login — não precisa mais da senha de administrador para isso. Aqui no painel admin só é possível <b>remover</b> o acesso de um colaborador.</p>
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> Cadastrar Novo Colaborador</h3>
+                <div class="flex flex-col md:flex-row gap-2">
+                    <input type="text" id="inputNomeNovoColab" placeholder="Nome completo do colaborador" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="cadastrarColaborador()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition">
+                        Cadastrar
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500">O sistema gera uma <b class="text-slate-700">senha temporária aleatória</b> e mostra na tela. Entregue-a ao colaborador — ele será obrigado a definir a própria senha no primeiro acesso.</p>
             </div>
 
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
@@ -596,9 +595,14 @@
         let colaboradoresDB = {}; 
         let tecnicoLogado = null;
         let adminLogado = false;
-        let autoLoginTentado = false; // Garante que o auto-login só é tentado 1x por carregamento de página
-        const SENHA_PADRAO = "123456";
-        const CHAVE_LOGIN_SALVO = "surgeos_tecnicoLogado"; // Chave usada no localStorage para manter o login
+        // SENHA_PADRAO ("123456") e autoLoginTentado foram removidas junto com o
+        // sistema de senha antigo. Não existe mais senha padrão: cada cadastro
+        // gera uma temporária aleatória, e o Firebase Auth guarda o hash.
+        //
+        // CHAVE_LOGIN_SALVO sobrevive só para apagar a chave antiga do
+        // localStorage no logout — ela sozinha liberava o painel sem senha, e
+        // continua gravada no navegador de quem usou a versão anterior.
+        const CHAVE_LOGIN_SALVO = "surgeos_tecnicoLogado";
         // Doc "marcador" gravado dentro da própria coleção "colaboradores" para
         // indicar que a criação inicial dos 6 nomes padrão já foi feita. Sem
         // isso, todo login rodava a checagem de novo e recriava sozinho
@@ -738,6 +742,8 @@
             document.getElementById('divGrupoNovaSenha').classList.add('hidden');
             document.getElementById('inputNovaSenhaCadastro').value = '';
             trocaPendente = false;
+            const botao = document.getElementById('btnSubmitLogin');
+            if (botao) botao.innerText = 'Entrar no Sistema';
         });
 
         // Atualiza a marca de "último acesso" do colaborador logado sempre que
@@ -778,9 +784,22 @@
 
         function exigirTrocaDeSenha() {
             trocaPendente = true;
-            document.getElementById('divGrupoNovaSenha').classList.remove('hidden');
-            document.getElementById('inputNovaSenhaCadastro').focus();
-            alert("Senha conferida. Agora defina sua senha pessoal (mínimo 6 caracteres) e clique em Entrar novamente.");
+
+            const bloco = document.getElementById('divGrupoNovaSenha');
+            const campo = document.getElementById('inputNovaSenhaCadastro');
+            const botao = document.getElementById('btnSubmitLogin');
+
+            bloco.classList.remove('hidden');
+
+            // Sem alert() aqui. O alert bloqueia antes do navegador repintar:
+            // a mensagem dizia "defina sua senha" enquanto a tela ainda estava
+            // igual, e o campo só surgia depois do OK. Pedir a ação num lugar e
+            // mostrar onde executá-la em outro é o que fazia a pessoa se perder.
+            // O bloco âmbar já tem título e explicação — ele fala por si.
+            if (botao) botao.innerText = 'Definir nova senha';
+
+            bloco.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            campo.focus();
         }
 
         async function tentarAutenticarColaborador() {
@@ -820,7 +839,7 @@
                     document.getElementById('divGrupoNovaSenha').classList.add('hidden');
                     document.getElementById('inputNovaSenhaCadastro').value = '';
                     document.getElementById('inputSenhaLogin').value = '';
-                    alert("Senha definida com sucesso!");
+                    if (botao) botao.innerText = 'Entrar no Sistema';
                     await aoAutenticar(window.auth.currentUser);
                 } catch (e) {
                     alert("Não foi possível definir a senha: " + traduzirErroAuth(e));
@@ -849,7 +868,13 @@
             } catch (e) {
                 alert(traduzirErroAuth(e));
             } finally {
-                if (botao) { botao.disabled = false; botao.innerText = 'Entrar no Sistema'; }
+                // O finally roda mesmo no `return` de exigirTrocaDeSenha(), então
+                // o rótulo tem que respeitar o estado — senão o botão volta a
+                // dizer "Entrar no Sistema" bem no passo em que ele salva a senha.
+                if (botao) {
+                    botao.disabled = false;
+                    botao.innerText = trocaPendente ? 'Definir nova senha' : 'Entrar no Sistema';
+                }
             }
         }
 
