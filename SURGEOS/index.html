@@ -670,7 +670,34 @@
                     return;
                 }
 
+                // A troca obrigatória é decidida AQUI, e não em
+                // tentarAutenticarColaborador(). Lá não funcionava:
+                // signInWithEmailAndPassword dispara onAuthStateChanged na hora,
+                // então este método abria o painel enquanto a checagem de
+                // precisaTrocar ainda estava a caminho. Resultado: quem entrava
+                // com a senha temporária ia direto para dentro do sistema e nunca
+                // era obrigado a trocar — exatamente o que a migração existe para
+                // garantir. Uma sessão só vira painel depois de passar por aqui.
+                if (encontrado && colaboradoresDB[encontrado].precisaTrocar) {
+                    nomeAguardandoTroca = encontrado;
+                    const sel = document.getElementById('selectColaboradorLogin');
+                    if (sel) sel.value = encontrado;
+                    exigirTrocaDeSenha();
+                    return;
+                }
+
+                nomeAguardandoTroca = null;
                 tecnicoLogado = encontrado;
+
+                const campoSenha = document.getElementById('inputSenhaLogin');
+                if (campoSenha) campoSenha.value = '';
+
+                // Registro de último acesso: mora aqui porque este é o ponto por
+                // onde toda sessão passa, inclusive a restaurada num recarregamento.
+                window.updateDoc(window.doc(window.db, "colaboradores", encontrado), {
+                    ultimoAcesso: Date.now()
+                }).catch((e) => console.error("Erro ao registrar último acesso:", e));
+
                 carregarColaboradoresFirebase();
                 carregarDadosFirebase();
                 liberarPainelPrincipal();
@@ -683,6 +710,8 @@
         function aoEncerrarSessao() {
             tecnicoLogado = null;
             adminLogado = false;
+            trocaPendente = false;
+            nomeAguardandoTroca = null;
             colaboradoresDB = {};
             document.getElementById('painelPrincipalSistema').classList.add('hidden');
             document.getElementById('painelPrincipalSistema').classList.remove('grid');
@@ -779,8 +808,11 @@
         }
 
         // Marca que a sessão atual entrou com senha temporária e ainda precisa
-        // definir a definitiva.
+        // definir a definitiva. `nomeAguardandoTroca` guarda de quem é a sessão
+        // nesse intervalo: `tecnicoLogado` só é preenchido quando o painel abre,
+        // e durante a troca o painel ainda não abriu.
         let trocaPendente = false;
+        let nomeAguardandoTroca = null;
 
         function exigirTrocaDeSenha() {
             trocaPendente = true;
@@ -827,15 +859,21 @@
                     alert("A nova senha precisa ser diferente da temporária.");
                     return;
                 }
+                // De quem é a sessão: `nomeAguardandoTroca` foi definido por
+                // aoAutenticar() a partir do uid. O valor do <select> é palpite
+                // do que está na tela e pode ter sido mexido no meio do caminho.
+                const dono = nomeAguardandoTroca || nomeColab;
+
                 try {
                     // A senha vive no Firebase Auth, que faz o hash. O Firestore
                     // não guarda mais credencial nenhuma.
                     await window.updatePassword(window.auth.currentUser, novaSenhaInput.trim());
-                    await window.updateDoc(window.doc(window.db, "colaboradores", nomeColab), {
+                    await window.updateDoc(window.doc(window.db, "colaboradores", dono), {
                         precisaTrocar: false,
                         ultimoAcesso: Date.now()
                     });
                     trocaPendente = false;
+                    nomeAguardandoTroca = null;
                     document.getElementById('divGrupoNovaSenha').classList.add('hidden');
                     document.getElementById('inputNovaSenhaCadastro').value = '';
                     document.getElementById('inputSenhaLogin').value = '';
@@ -849,22 +887,22 @@
 
             if (botao) { botao.disabled = true; botao.innerText = 'Entrando...'; }
             try {
-                const cred = await window.signInWithEmailAndPassword(
+                await window.signInWithEmailAndPassword(
                     window.auth, emailDoColaborador(nomeColab), senhaInput
                 );
 
-                const snap = await window.getDoc(window.doc(window.db, "colaboradores", nomeColab));
-                if (snap.exists() && snap.data().precisaTrocar) {
-                    exigirTrocaDeSenha();
-                    return;
-                }
-
-                await window.updateDoc(window.doc(window.db, "colaboradores", nomeColab), {
-                    ultimoAcesso: Date.now()
-                }).catch((e) => console.error("Erro ao registrar último acesso:", e));
-
-                document.getElementById('inputSenhaLogin').value = '';
-                // onAuthStateChanged assume daqui e abre o painel.
+                // A checagem de precisaTrocar que ficava aqui foi removida: ela
+                // corria contra o onAuthStateChanged, que o signIn acima dispara
+                // na hora, e perdia. Quem decide agora é aoAutenticar(), único
+                // ponto por onde uma sessão vira painel — inclusive quando a
+                // sessão é restaurada num novo carregamento de página, caso que
+                // esta função nem chega a ver.
+                //
+                // O campo de senha NÃO é limpo aqui: se o caminho for o da troca
+                // obrigatória, a segunda etapa ainda precisa dele — tanto para
+                // passar pela validação quanto para recusar uma "nova" senha
+                // igual à provisória. Quem limpa é aoAutenticar(), ao abrir o
+                // painel, e a própria conclusão da troca.
             } catch (e) {
                 alert(traduzirErroAuth(e));
             } finally {

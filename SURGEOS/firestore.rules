@@ -61,15 +61,22 @@ service cloud.firestore {
     match /colaboradores/{nome} {
       allow read: if logado();
 
-      // Campos que o próprio colaborador pode manter. `uid` e `precisaTrocar`
-      // ficam de fora de propósito:
-      //   - uid: sem essa trava, um técnico apontaria o documento de outro
-      //     para si mesmo e herdaria os serviços dele;
-      //   - precisaTrocar: se o dono pudesse desligar, anularia a rotação
-      //     forçada de senha que a migração existe para garantir.
+      // Campos que o próprio colaborador pode manter.
+      //
+      // `uid` fica de fora: sem essa trava, um técnico apontaria o documento de
+      // outro para si mesmo e herdaria os serviços dele.
+      //
+      // `precisaTrocar` entra porque é o próprio dono que desliga a flag, logo
+      // depois de definir a senha nova pelo Firebase Auth. Deixá-lo de fora
+      // travava o primeiro acesso num laço: a senha trocava no Auth, mas a
+      // gravação era recusada e o sistema seguia exigindo a troca para sempre.
+      //
+      // O abuso possível é o dono gravar precisaTrocar: false sem ter trocado
+      // nada, e o efeito é ficar com a própria senha temporária. Afeta só a
+      // conta dele, e ele já a conhece — decisão consciente.
       function camposDoDono() {
         return request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['ultimoAcesso', 'usouPontosManuaisRV']);
+          .hasOnly(['ultimoAcesso', 'usouPontosManuaisRV', 'precisaTrocar']);
       }
 
       allow update: if (dono(nome) && camposDoDono()) || admin();
