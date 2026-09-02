@@ -160,7 +160,7 @@
         @keyframes surgeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
         .anim-in { animation: surgeIn .32s cubic-bezier(.22,.61,.36,1) both; }
         @media (prefers-reduced-motion: reduce) {
-            .anim-in, .texto-correndo-rv { animation: none !important; }
+            .anim-in { animation: none !important; }
         }
 
         /* Ajuda do campo de pontos manuais: aparece ao passar o mouse ou ao
@@ -175,18 +175,6 @@
         .scroll-slim::-webkit-scrollbar { height: 8px; width: 8px; }
         .scroll-slim::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
         .scroll-slim::-webkit-scrollbar-track { background: transparent; }
-    </style>
-    <!-- Animação do texto corrido (marquee) usado no aviso do campo de pontos manuais da RV -->
-    <style>
-        @keyframes correrTextoRV {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-        .texto-correndo-rv {
-            display: inline-block;
-            white-space: nowrap;
-            animation: correrTextoRV 10s linear infinite;
-        }
     </style>
     <!-- Lucide: ícones outline de linha única (substituem os emojis) -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -592,18 +580,6 @@
 
                     <!-- Opção de Inserir Pontos Manual (Total de Pontos da RV) -->
                     <div>
-                        <!-- Aviso animado (seta piscando + texto correndo): só aparece até o
-                             colaborador usar este campo pela 1ª vez. Depois disso, some sozinho. -->
-                        <div id="avisoPontosManuaisRV" class="hidden items-center gap-2 mb-1.5">
-                            <svg class="w-5 h-5 text-amber-500 shrink-0 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 4v15" />
-                                <path d="M12 19l-5-5" />
-                                <path d="M12 19l5-5" />
-                            </svg>
-                            <div class="flex-1 overflow-hidden rounded-ctl bg-amber-100 border border-amber-300 py-1 px-1">
-                                <span class="texto-correndo-rv text-[11px] font-bold text-amber-700">INSERIR TOTAL DE PONTOS DA RV MANUALMENTE : PASSE O MOUSE AQUI&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INSERIR TOTAL DE PONTOS DA RV MANUALMENTE : PASSE O MOUSE AQUI&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                            </div>
-                        </div>
                         <div class="grupo-ajuda relative">
                             <div class="flex items-center justify-between gap-2 mb-1.5">
                                 <label for="pontosManuais" class="lbl mb-0">Inserir pontos manualmente aqui</label>
@@ -1016,7 +992,6 @@
                     colaboradoresDB[doc.id] = doc.data();
                 });
                 if (adminLogado) renderizarTabelaAdmin();
-                if (tecnicoLogado) atualizarAvisoPontosManuaisRV();
             });
         }
 
@@ -1253,19 +1228,6 @@
             if (botao) botao.setAttribute('aria-expanded', 'false');
         });
 
-        function atualizarAvisoPontosManuaisRV() {
-            const aviso = document.getElementById('avisoPontosManuaisRV');
-            if (!aviso || !tecnicoLogado) return;
-            const jaUsou = colaboradoresDB[tecnicoLogado] && colaboradoresDB[tecnicoLogado].usouPontosManuaisRV;
-            if (jaUsou) {
-                aviso.classList.add('hidden');
-                aviso.classList.remove('flex');
-            } else {
-                aviso.classList.remove('hidden');
-                aviso.classList.add('flex');
-            }
-        }
-
         function liberarPainelPrincipal() {
             document.getElementById('telaAutenticacaoColaborador').classList.add('hidden');
             const painel = document.getElementById('painelPrincipalSistema');
@@ -1279,7 +1241,6 @@
             document.getElementById('labelColaboradorLogado').innerText = tecnicoLogado;
             atualizarBotaoAdmin();
             aplicarEstadoDashboard(lerPreferenciaDashboard());
-            atualizarAvisoPontosManuaisRV();
             calcularTotais();
         }
 
@@ -1686,23 +1647,6 @@ Sem escolher, o sistema lançaria 77 pts para qualquer uma delas.`);
                     document.getElementById('whatsappCliente').value = '';
                     document.getElementById('pontosManuais').value = '';
                     selecionarTipoCliente('PF');
-                }
-                // Se o colaborador usou o campo de pontos manuais da RV neste
-                // lançamento novo (não vale para edição), marca no Firestore que
-                // ele já usou esse campo pela 1ª vez — o aviso animado (seta +
-                // texto correndo) some para sempre a partir de agora.
-                if (!editId && pontosManuaisInput !== '' && !isNaN(pontosManuaisInput)) {
-                    if (!colaboradoresDB[tecnicoLogado] || !colaboradoresDB[tecnicoLogado].usouPontosManuaisRV) {
-                        try {
-                            await window.updateDoc(window.doc(window.db, "colaboradores", tecnicoLogado), {
-                                usouPontosManuaisRV: true
-                            });
-                            if (colaboradoresDB[tecnicoLogado]) colaboradoresDB[tecnicoLogado].usouPontosManuaisRV = true;
-                        } catch (e) {
-                            console.error("Erro ao marcar uso do campo de pontos manuais:", e);
-                        }
-                        atualizarAvisoPontosManuaisRV();
-                    }
                 }
                 registrarAtividadeColaborador();
                 window.scrollTo({ top: 0, behavior: 'smooth' });

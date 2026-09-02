@@ -16,11 +16,31 @@
     ],
     "headers": [
       {
-        "source": "index.html",
+        "//": "A raiz precisa de regra propria. O visitante pede '/', nao '/index.html', e o padrao 'index.html' nao casa com esse caminho - era por isso que surgeos.web.app servia pagina de ate 1 hora atras mesmo depois do deploy, enquanto /index.html vinha atualizado.",
+        "source": "/",
         "headers": [
           {
             "key": "Cache-Control",
             "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "//": "Imagem nao muda entre deploys e pesa ~94 KB. Cachear economiza dados do tecnico que abre o painel varias vezes por dia no celular.",
+        "source": "**/*.@(jpg|jpeg|png|gif|svg|webp|ico)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
           }
         ]
       }
