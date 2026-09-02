@@ -763,7 +763,10 @@
                     <!-- 2. Composicao e ritmo, comprimidos lado a lado -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 border-t border-slate-100">
                         <div>
-                            <span class="eyebrow">Composicao por tipo</span>
+                            <div class="flex items-baseline justify-between gap-2">
+                                <span class="eyebrow">Composicao por tipo</span>
+                                <span id="seloComposicao" class="text-[11px] text-slate-400">mes inteiro</span>
+                            </div>
                             <div id="graficoTipos" class="mt-2.5 space-y-1.5"></div>
                         </div>
                         <div>
@@ -1288,7 +1291,23 @@
         function atualizarIndicadorVisualizacao() {
             const labels = { dia: 'Dia Selecionado', ultimos8: 'Últimos 8', todos: 'Todos (mês)', tudo: 'Todas as Datas' };
             const badge = document.getElementById('badgeVisualizacao');
-            if (badge) badge.textContent = labels[modoVisualizacaoTabela] || 'Dia Selecionado';
+            if (badge) {
+                // Com foco ativo o selo mostra o dia e vira o botao de saida.
+                // Sem ele, a unica pista de que a lista esta recortada seria a
+                // barra mais escura la em cima, longe da tabela.
+                if (diaFoco) {
+                    badge.className = 'chip-brand cursor-pointer';
+                    badge.innerHTML = `Dia ${String(diaFoco.dia).padStart(2, '0')} <i data-lucide="x" class="w-3 h-3"></i>`;
+                    badge.title = 'Voltar para o mes inteiro';
+                    badge.onclick = limparDiaFoco;
+                } else {
+                    badge.className = 'chip-brand';
+                    badge.textContent = labels[modoVisualizacaoTabela] || 'Dia Selecionado';
+                    badge.title = '';
+                    badge.onclick = null;
+                }
+                if (window.lucide) lucide.createIcons();
+            }
 
             document.querySelectorAll('#menuVisualizacao button[data-modo]').forEach(btn => {
                 const ativo = btn.getAttribute('data-modo') === modoVisualizacaoTabela;
@@ -1961,6 +1980,19 @@
                 registrosExibidos = [...meusRegistros].sort(comparadorHistorico);
             }
 
+            // Foco de dia vindo do clique numa barra do grafico.
+            //
+            // SUBSTITUI o recorte do modo de visualizacao em vez de somar-se a
+            // ele. Somando, o modo padrao "Dia Selecionado" (que mostra o dia
+            // do campo "Filtrar por dia") cruzado com o dia clicado no grafico
+            // dava lista vazia sempre que os dois eram diferentes - que e o
+            // caso normal. Partir de registrosMes garante que o clique mostre
+            // aquele dia, qualquer que seja o modo ativo.
+            if (diaFoco && diaFoco.ano === anoF && diaFoco.mes === mesF) {
+                const alvo = `${diaFoco.ano}-${String(diaFoco.mes).padStart(2, '0')}-${String(diaFoco.dia).padStart(2, '0')}`;
+                registrosExibidos = registrosMes.filter(reg => reg.data === alvo);
+            }
+
             registrosExibidos.forEach(reg => {
                 const [anoR, mesR, diaR] = reg.data.split('-').map(Number);
                 const dataFormatada = `${String(diaR).padStart(2,'0')}/${String(mesR).padStart(2,'0')}/${anoR}`;
@@ -2001,8 +2033,8 @@
             if (registrosExibidos.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center">
                     <i data-lucide="inbox" class="w-8 h-8 mx-auto text-slate-300"></i>
-                    <p class="text-sm font-semibold text-slate-500 mt-3">Nenhum servico neste modo de visualizacao</p>
-                    <p class="text-xs text-slate-400 mt-1">Troque o dia no filtro ou o modo no botao de ajustes.</p>
+                    <p class="text-sm font-semibold text-slate-500 mt-3">${diaFoco ? `Nenhum servico no dia ${String(diaFoco.dia).padStart(2, '0')}` : 'Nenhum servico neste modo de visualizacao'}</p>
+                    <p class="text-xs text-slate-400 mt-1">${diaFoco ? 'Clique de novo na barra do grafico para ver o mes inteiro.' : 'Troque o dia no filtro ou o modo no botao de ajustes.'}</p>
                 </td></tr>`;
             }
 
@@ -2035,6 +2067,7 @@
             document.getElementById('qtdTarefasMes').innerText = qtdTarefasMes;
             document.getElementById('pontosTarefasMes').innerText = `${pontosTarefasMes} pts`;
 
+            atualizarIndicadorVisualizacao();
             atualizarPainelMetasEProjecao(anoF, mesF, meusRegistros);
             renderizarDashboard(registrosMes, anoF, mesF);
             if (window.lucide) lucide.createIcons();
@@ -2123,7 +2156,41 @@
         // suspeito, sem protocolo repetido). Grafico que contradiz o card do
         // topo e pior do que grafico nenhum.
         // ============================================================
+        // Dia em foco no painel. null = mes inteiro.
+        //
+        // Recorta a composicao por tipo E a tabela de lancamentos. Nao toca em
+        // KPI, meta ou projecao: essas respondem "como esta o mes", e um
+        // clique num dia nao deveria fazer o cartao "Total do mes" virar um
+        // dia. Tambem nao mexe no campo "Filtrar por dia" nem no modo de
+        // visualizacao - sao escolhas manuais, e sobrescreve-las por causa de
+        // um clique no grafico irrita mais do que ajuda.
+        // Guarda ano e mes junto para a selecao nao sobreviver a uma troca de
+        // mes de referencia: "dia 5" de agosto exibido sobre setembro seria
+        // uma mentira silenciosa.
+        let diaFoco = null;
+
+        // Ultimo contexto entregue ao dashboard, para o clique numa barra
+        // poder redesenhar so o dashboard em vez de recalcular a tela toda.
+        let contextoDashboard = null;
+
+        function alternarDiaFoco(dia) {
+            const igual = diaFoco && diaFoco.dia === dia;
+            diaFoco = igual ? null : { dia: dia, ano: contextoDashboard.ano, mes: contextoDashboard.mes };
+            // calcularTotais() redesenha a tabela e, no fim, o dashboard.
+            // Chamar so renderizarDashboard() deixaria a lista desatualizada.
+            calcularTotais();
+        }
+
+        function limparDiaFoco() {
+            diaFoco = null;
+            calcularTotais();
+        }
+
         function renderizarDashboard(registrosDoMes, ano, mes) {
+            contextoDashboard = { registros: registrosDoMes, ano: ano, mes: mes };
+            if (diaFoco && (diaFoco.ano !== ano || diaFoco.mes !== mes)) {
+                diaFoco = null;
+            }
             const elDias = document.getElementById('graficoDiario');
             const elTipos = document.getElementById('graficoTipos');
             const elRitmo = document.getElementById('graficoRitmo');
@@ -2168,16 +2235,35 @@
                 else if (fds) cor = 'bg-brand-300';
                 if (d === melhorDia && porDia[d] > 0) cor = 'bg-brand-700';
 
-                const rotulo = `Dia ${String(d).padStart(2, '0')}: ${porDia[d]} pts em ${qtdPorDia[d]} servico(s)`;
-                barras += `<div class="flex-1 min-w-0 flex flex-col justify-end h-full group" title="${rotulo}">
-                        <div class="${cor} rounded-t-[3px] transition-all duration-500 group-hover:opacity-80" style="height:${altura.toFixed(1)}%"></div>
+                // Dia com producao vira alvo de clique: recorta a composicao
+                // por tipo logo abaixo. Dia vazio nao e clicavel - filtrar por
+                // ele so produziria uma caixa vazia.
+                const clicavel = porDia[d] > 0;
+                const selecionado = !!(clicavel && diaFoco && diaFoco.dia === d);
+                if (selecionado) cor = 'bg-brand-800';
+
+                let rotulo = `Dia ${String(d).padStart(2, '0')}: sem lancamentos`;
+                if (clicavel) {
+                    rotulo = `Dia ${String(d).padStart(2, '0')}: ${porDia[d]} pts em ${qtdPorDia[d]} servico(s). `
+                           + (selecionado ? 'Clique de novo para voltar ao mes inteiro.' : 'Clique para ver a composicao e os lancamentos deste dia.');
+                }
+
+                barras += `<div class="flex-1 min-w-0 flex flex-col justify-end h-full group ${clicavel ? 'cursor-pointer' : ''}"
+                        title="${rotulo}"
+                        ${clicavel ? `onclick="alternarDiaFoco(${d})"` : ''}
+                        ${clicavel ? `role="button" tabindex="0" aria-pressed="${selecionado}"` : ''}>
+                        <div class="${cor} rounded-t-[3px] transition-all duration-500 ${clicavel ? 'group-hover:opacity-75' : ''} ${selecionado ? 'ring-2 ring-brand-900/30 ring-offset-1' : ''}" style="height:${altura.toFixed(1)}%"></div>
                     </div>`;
             }
 
             let reguas = '';
             for (let d = 1; d <= ultimoDia; d++) {
                 const mostrar = (d === 1 || d % 5 === 0 || d === ultimoDia);
-                reguas += `<div class="flex-1 min-w-0 text-center text-[9px] ${d === diaDeHoje && ehMesCorrente ? 'text-brand-600 font-bold' : 'text-slate-400'}">${mostrar ? String(d).padStart(2, '0') : ''}</div>`;
+                const selecionadoRegua = diaFoco && diaFoco.dia === d;
+                let classeRegua = 'text-slate-400';
+                if (d === diaDeHoje && ehMesCorrente) classeRegua = 'text-brand-600 font-bold';
+                if (selecionadoRegua) classeRegua = 'text-brand-800 font-bold';
+                reguas += `<div class="flex-1 min-w-0 text-center text-[9px] ${classeRegua}">${(mostrar || selecionadoRegua) ? String(d).padStart(2, '0') : ''}</div>`;
             }
 
             elDias.innerHTML = `
@@ -2200,8 +2286,16 @@
             }
 
             // ---------- 2. Composicao por tipo ----------
+            // Recortada pelo dia clicado no grafico acima, quando houver um.
+            // O recorte para aqui de proposito: KPIs, metas e projecao
+            // continuam sendo do mes. Eles respondem outra pergunta, e mexer
+            // neles faria o clique parecer que trocou o mes inteiro.
+            const baseTipos = diaFoco
+                ? validos.filter(r => Number(String(r.data).split('-')[2]) === diaFoco.dia)
+                : validos;
+
             const porTipo = {};
-            validos.forEach(reg => {
+            baseTipos.forEach(reg => {
                 const chave = reg.subcategoria ? `${reg.tipo} / ${reg.subcategoria}` : (reg.tipo || 'Sem tipo');
                 if (!porTipo[chave]) porTipo[chave] = { pts: 0, qtd: 0 };
                 porTipo[chave].pts += Number(reg.pontos) || 0;
@@ -2210,6 +2304,24 @@
 
             const tipos = Object.entries(porTipo).sort((a, b) => b[1].pts - a[1].pts).slice(0, 5);
             const totalPts = tipos.reduce((s, [, v]) => s + v.pts, 0) || 1;
+
+            // Selo do recorte: diz qual dia esta sendo mostrado e oferece a
+            // volta. Sem ele, o unico jeito de saber que a caixa esta
+            // filtrada seria reparar na barra mais escura la em cima.
+            const selo = document.getElementById('seloComposicao');
+            if (selo) {
+                if (diaFoco) {
+                    selo.className = 'chip-brand cursor-pointer';
+                    selo.innerHTML = `Dia ${String(diaFoco.dia).padStart(2, '0')} <i data-lucide="x" class="w-3 h-3"></i>`;
+                    selo.title = 'Voltar para o total do mes';
+                    selo.onclick = limparDiaFoco;
+                } else {
+                    selo.className = 'text-[11px] text-slate-400';
+                    selo.innerHTML = 'mes inteiro';
+                    selo.title = 'Clique numa barra do grafico para ver um dia';
+                    selo.onclick = null;
+                }
+            }
 
             elTipos.innerHTML = tipos.length ? tipos.map(([nome, v]) => {
                 const pct = (v.pts / totalPts) * 100;
@@ -2223,7 +2335,7 @@
                             <div class="bg-brand-500 h-1 rounded-full transition-all duration-700" style="width:${pct.toFixed(1)}%"></div>
                         </div>
                     </div>`;
-            }).join('') : '<p class="text-xs text-slate-400">Sem servicos lancados neste mes.</p>';
+            }).join('') : `<p class="text-xs text-slate-400">${diaFoco ? 'Sem servicos lancados neste dia.' : 'Sem servicos lancados neste mes.'}</p>`;
 
             // ---------- 3. Ritmo contra a meta ----------
             const META_PRINCIPAL = 6500;
