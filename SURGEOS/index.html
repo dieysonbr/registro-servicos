@@ -303,6 +303,23 @@
                 <div class="w-8 h-8 rounded-full bg-emerald-400/15 border border-emerald-300/30 flex items-center justify-center">
                     <i data-lucide="user-round" class="w-4 h-4 text-emerald-300"></i>
                 </div>
+
+                <!-- Area do administrador: mora aqui dentro, no perfil de quem
+                     esta logado, e nao na tela de login. Duas razoes:
+                     1. Autorizacao. Ser administrador e uma custom claim no
+                        token da conta (conceder_admin.js). Fora de uma sessao
+                        o botao nao tinha o que verificar - na tela de login
+                        ele so conseguia responder "entre primeiro".
+                     2. Exposicao. Um botao de area administrativa visivel a
+                        qualquer visitante anuncia a porta sem precisar.
+                     A visibilidade segue a claim, nao um nome escrito no
+                     codigo: se a permissao for concedida ou revogada, o botao
+                     acompanha sem ninguem precisar editar o HTML. -->
+                <button id="btnAreaAdmin" onclick="tentarLoginAdmin()" title="Abrir painel administrativo" class="hidden btn btn-sm text-amber-200/80 hover:text-amber-100 hover:bg-amber-400/10 border border-amber-300/25">
+                    <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Administrador</span>
+                </button>
+
                 <button onclick="fazerLogout()" title="Sair / trocar de colaborador" class="btn btn-sm text-white/70 hover:text-white hover:bg-white/10 border border-white/10">
                     <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
                     <span class="hidden sm:inline">Sair</span>
@@ -379,11 +396,10 @@
                     <i data-lucide="log-in" class="w-4 h-4"></i> Entrar no sistema
                 </button>
 
-                <div class="text-center pt-1 border-t border-white/10">
-                    <button onclick="abrirLoginAdmin()" class="btn btn-sm text-white/45 hover:text-white hover:bg-white/10 mt-3">
-                        <i data-lucide="shield" class="w-3.5 h-3.5"></i> Area do administrador
-                    </button>
-                </div>
+                <!-- O botao "Area do administrador" saiu daqui: fora de uma
+                     sessao nao havia token para checar a permissao, entao ele
+                     so podia mandar o visitante entrar primeiro. Agora vive na
+                     barra superior, dentro do perfil autenticado. -->
             </div>
 
             <p class="text-center text-[10px] font-semibold tracking-[0.18em] text-white/30 mt-6 uppercase">
@@ -398,22 +414,11 @@
                  erro; tira-lo e mais honesto do que deixa-lo falhar. -->
         </div>
 
-        <!-- MODAL: LOGIN DO ADMINISTRADOR -->
-        <div id="modalLoginAdmin" class="hidden fixed inset-0 bg-ink-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div class="card shadow-pop max-w-sm w-full p-6 space-y-5">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5 text-brand-600"></i> Login do Administrador</h2>
-                    <button onclick="fecharLoginAdmin()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Senha de Administrador</label>
-                    <input type="password" id="inputSenhaAdmin" placeholder="Digite a senha de administrador" class="field">
-                </div>
-                <button onclick="tentarLoginAdmin()" class="btn-dark btn-block">
-                    Entrar
-                </button>
-            </div>
-        </div>
+        <!-- O modal "Login do Administrador" foi removido. Ele pedia uma senha
+             que tentarLoginAdmin() nem lia: a senha de admin deixou de existir
+             quando a permissao virou custom claim no token. Campo de senha que
+             descarta o que a pessoa digita ensina uma seguranca que nao existe.
+             A entrada agora e o botao "Administrador" na barra superior. -->
 
         <!-- PAINEL ADMINISTRATIVO -->
         <div id="painelAdmin" class="hidden max-w-4xl mx-auto space-y-6 my-8">
@@ -946,6 +951,8 @@
             document.getElementById('telaAutenticacaoColaborador').classList.remove('hidden');
             const barraSaindo = document.getElementById('barraUsuario');
             if (barraSaindo) { barraSaindo.classList.add('hidden'); barraSaindo.classList.remove('flex'); }
+            const btnAdminSaindo = document.getElementById('btnAreaAdmin');
+            if (btnAdminSaindo) btnAdminSaindo.classList.add('hidden');
             carregarListaPublicaDeNomes();
         }
 
@@ -1196,6 +1203,7 @@
             const barra = document.getElementById('barraUsuario');
             if (barra) { barra.classList.remove('hidden'); barra.classList.add('flex'); }
             document.getElementById('labelColaboradorLogado').innerText = tecnicoLogado;
+            atualizarBotaoAdmin();
             atualizarAvisoPontosManuaisRV();
             calcularTotais();
         }
@@ -2462,15 +2470,42 @@
 
         // ============ ÁREA ADMINISTRATIVA ============
 
-        function abrirLoginAdmin() {
-            document.getElementById('modalLoginAdmin').classList.remove('hidden');
-            document.getElementById('modalLoginAdmin').classList.add('flex');
-        }
+        // Colaboradores que administram o sistema. Serve APENAS para decidir
+        // se o botao aparece na barra — nunca para liberar acesso.
+        const ADMINISTRADORES = ['DIEYSON DE PAULA'];
 
-        function fecharLoginAdmin() {
-            document.getElementById('modalLoginAdmin').classList.add('hidden');
-            document.getElementById('modalLoginAdmin').classList.remove('flex');
-            document.getElementById('inputSenhaAdmin').value = '';
+        // Mostra o botao de administrador na barra superior.
+        //
+        // Visibilidade e autorizacao sao coisas separadas aqui, de proposito:
+        //
+        //   - O botao aparece para quem tem a custom claim de admin no token
+        //     OU para quem esta na lista ADMINISTRADORES acima.
+        //   - Quem manda de verdade e tentarLoginAdmin(), que exige a claim e
+        //     recusa qualquer outra conta. As Regras do Firestore exigem a
+        //     mesma claim do lado do servidor.
+        //
+        // Por que a lista existe, se a claim ja decide: se a conta ainda nao
+        // recebeu a permissao (conceder_admin.js), o botao ficaria invisivel e
+        // pareceria um bug. Com a lista, o botao aparece, o clique explica o
+        // que falta, e ninguem ganha acesso por estar escrito no HTML —
+        // esconder um botao nunca foi mecanismo de seguranca.
+        async function atualizarBotaoAdmin() {
+            const btn = document.getElementById('btnAreaAdmin');
+            if (!btn) return;
+
+            const naLista = ADMINISTRADORES.includes((tecnicoLogado || '').trim().toUpperCase());
+            btn.classList.toggle('hidden', !naLista);
+
+            const usuario = window.auth && window.auth.currentUser;
+            if (!usuario) return;
+
+            try {
+                const token = await usuario.getIdTokenResult();
+                if (token.claims.admin === true) btn.classList.remove('hidden');
+            } catch (e) {
+                // Sem token legivel fica valendo so a lista. Errar para o lado
+                // de mostrar e inofensivo: o clique ainda passa pela claim.
+            }
         }
 
         async function tentarLoginAdmin() {
@@ -2488,7 +2523,6 @@
 
             if (!usuario) {
                 alert("Entre com seu usuário de colaborador primeiro. A área administrativa é liberada pela sua conta, não por uma senha separada.");
-                fecharLoginAdmin();
                 return;
             }
 
@@ -2503,7 +2537,6 @@
                 }
 
                 adminLogado = true;
-                fecharLoginAdmin();
                 document.getElementById('telaAutenticacaoColaborador').classList.add('hidden');
                 document.getElementById('painelPrincipalSistema').classList.add('hidden');
                 document.getElementById('painelPrincipalSistema').classList.remove('grid');
