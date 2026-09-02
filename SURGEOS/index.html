@@ -7,6 +7,168 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232563eb'/%3E%3Cpath d='M27 30a23 23 0 0 1 46 0' stroke='white' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3Crect x='25' y='27' width='50' height='7' rx='3.5' fill='white'/%3E%3Ccircle cx='50' cy='39' r='11' fill='white'/%3E%3Cpath d='M30 86v-8a20 20 0 0 1 40 0v8' stroke='white' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3Crect x='60' y='55' width='24' height='30' rx='4' fill='white'/%3E%3Crect x='67' y='51' width='10' height='7' rx='2' fill='%232563eb'/%3E%3Cline x1='66' y1='64' x2='78' y2='64' stroke='%232563eb' stroke-width='4'/%3E%3Cline x1='66' y1='71' x2='78' y2='71' stroke='%232563eb' stroke-width='4'/%3E%3Cline x1='66' y1='78' x2='74' y2='78' stroke='%232563eb' stroke-width='4'/%3E%3C/svg%3E">
     <!-- Tailwind CSS para um design moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- ============================================================
+         SISTEMA VISUAL
+         Tipografia, cor, raio e componentes ficam declarados AQUI, em um
+         lugar so. O restante da pagina consome as classes (.card, .btn,
+         .field, .kpi...) em vez de repetir utilitarios soltos - foi o que
+         antes produzia 4 raios diferentes e 8 pesos de fonte sem regra.
+         ============================================================ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        display: ['"Inter Tight"', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        // Uma cor de marca so. Tudo que nao for acao primaria
+                        // ou dado em destaque usa cinza - e a disciplina que
+                        // separa painel profissional de painel de arco-iris.
+                        brand: {
+                            50: '#eff5ff', 100: '#dbe8fe', 200: '#bfd7fe', 300: '#93bbfd',
+                            400: '#6098fa', 500: '#3b7bf6', 600: '#2563eb', 700: '#1d4fd8',
+                            800: '#1e40af', 900: '#1e3a8a',
+                        },
+                        ink: {
+                            700: '#1c2740', 800: '#131c30', 900: '#0b1220', 950: '#070c16',
+                        },
+                    },
+                    borderRadius: {
+                        // Raio unico, em dois tamanhos: controle e cartao.
+                        ctl: '10px',
+                        card: '16px',
+                    },
+                    boxShadow: {
+                        card: '0 1px 2px rgba(15,23,42,.04), 0 12px 28px -16px rgba(15,23,42,.22)',
+                        pop: '0 12px 40px -12px rgba(15,23,42,.35)',
+                        glow: '0 0 0 1px rgba(37,99,235,.35), 0 18px 50px -12px rgba(37,99,235,.55)',
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer base {
+            html { -webkit-text-size-adjust: 100%; }
+            body { @apply antialiased; }
+            /* Numeros de largura fixa: sem isso, cada linha da tabela de
+               pontos "danca" horizontalmente e a coluna fica ilegivel. */
+            table, .num { font-variant-numeric: tabular-nums; }
+            ::selection { @apply bg-brand-600/20; }
+        }
+
+        @layer components {
+            /* --- Superficies ------------------------------------------------ */
+            .card       { @apply bg-white rounded-card border border-slate-200/90 shadow-card; }
+            .card-pad   { @apply p-5 md:p-6; }
+            .card-head  { @apply flex items-center justify-between gap-3 flex-wrap; }
+            .eyebrow    { @apply text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500; }
+            .card-title { @apply text-[13px] font-semibold uppercase tracking-[0.09em] text-slate-600 flex items-center gap-2; }
+            .section-h  { @apply font-display text-lg font-semibold text-slate-900 tracking-[-0.02em] flex items-center gap-2; }
+
+            /* Display: leading 1 e tracking negativo, so nos momentos de
+               numero grande. E o unico lugar onde a tipografia "fala alto". */
+            .display    { @apply font-display leading-none tracking-[-0.035em]; }
+
+            /* --- Acoes ------------------------------------------------------ */
+            .btn         { @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-ctl text-sm font-semibold
+                                  transition-all duration-150 select-none whitespace-nowrap
+                                  focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/25
+                                  disabled:opacity-50 disabled:cursor-not-allowed; }
+            .btn-sm      { @apply h-8 px-3 text-xs rounded-[8px]; }
+            .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 shadow-sm hover:shadow-md; }
+            .btn-dark    { @apply btn bg-ink-900 text-white hover:bg-ink-800; }
+            .btn-soft    { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300; }
+            .btn-ghost   { @apply btn text-slate-600 hover:text-slate-900 hover:bg-slate-100; }
+            .btn-danger  { @apply btn text-red-600 bg-white border border-red-200 hover:bg-red-50; }
+            .btn-block   { @apply w-full; }
+
+            /* --- Formulario ------------------------------------------------- */
+            .lbl   { @apply block text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 mb-1.5; }
+            .field { @apply w-full h-10 px-3 rounded-ctl border border-slate-300 bg-white text-sm text-slate-800
+                            placeholder:text-slate-400 placeholder:font-normal transition
+                            focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15; }
+            select.field { @apply pr-8; }
+
+            /* --- Indicadores ------------------------------------------------ */
+            .kpi        { @apply card p-4 md:p-5 relative overflow-hidden; }
+            .kpi-label  { @apply eyebrow; }
+            .kpi-value  { @apply display text-3xl md:text-[34px] font-semibold text-slate-900 mt-2 num; }
+            .kpi-unit   { @apply text-base font-semibold text-slate-400 ml-1 tracking-normal; }
+            .kpi-foot   { @apply text-xs text-slate-500 mt-2; }
+
+            .chip       { @apply inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-semibold whitespace-nowrap; }
+            .chip-brand { @apply chip bg-brand-50 text-brand-700 border border-brand-100; }
+            .chip-mute  { @apply chip bg-slate-100 text-slate-600 border border-slate-200; }
+            .chip-ok    { @apply chip bg-emerald-50 text-emerald-700 border border-emerald-100; }
+            .chip-warn  { @apply chip bg-amber-50 text-amber-700 border border-amber-100; }
+
+            /* --- Tabela ----------------------------------------------------- */
+            .tbl        { @apply w-full text-left border-collapse text-sm; }
+            .tbl thead th { @apply sticky top-0 z-10 bg-slate-50 px-3 py-2.5
+                                   text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500
+                                   border-b border-slate-200 whitespace-nowrap; }
+            .tbl tbody td { @apply px-3 py-2.5 border-b border-slate-100 align-middle; }
+            .tbl tbody tr { @apply transition-colors; }
+            .tbl tbody tr:hover { @apply bg-brand-50/40; }
+            .mono       { @apply font-mono text-[13px] tracking-tight; }
+
+            /* --- Moldura escura (topo, login) ------------------------------- */
+            .glass      { @apply bg-ink-900/70 backdrop-blur-xl border border-white/10; }
+        }
+    </style>
+
+    <style>
+        /* Fundo: a foto continua, mas coberta por um degrade escuro que da
+           contraste constante aos cartoes. Antes, o texto disputava com o
+           que quer que estivesse na foto naquele ponto da tela. */
+        body.app-bg {
+            background-color: #0b1220;
+            background-image:
+                linear-gradient(180deg, rgba(7,12,22,.92) 0%, rgba(11,18,32,.86) 45%, rgba(7,12,22,.95) 100%),
+                radial-gradient(1200px 600px at 15% -10%, rgba(37,99,235,.28), transparent 60%),
+                radial-gradient(900px 500px at 90% 0%, rgba(56,189,248,.14), transparent 55%),
+                url("img/fundo.jpg");
+            background-size: cover, cover, cover, cover;
+            background-position: center, center, center, center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        /* Trelica sutil por cima do fundo - da textura sem pesar em bateria,
+           ao contrario de qualquer animacao de canvas. */
+        body.app-bg::before {
+            content: "";
+            position: fixed; inset: 0; pointer-events: none; z-index: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+            background-size: 56px 56px;
+            -webkit-mask-image: radial-gradient(circle at 50% 0%, #000 0%, transparent 75%);
+            mask-image: radial-gradient(circle at 50% 0%, #000 0%, transparent 75%);
+        }
+        body.app-bg > * { position: relative; z-index: 1; }
+
+        /* Entrada suave dos blocos. Curta o bastante para nao atrasar quem
+           esta lancando a quadragesima O.S. do dia. */
+        @keyframes surgeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        .anim-in { animation: surgeIn .32s cubic-bezier(.22,.61,.36,1) both; }
+        @media (prefers-reduced-motion: reduce) {
+            .anim-in, .texto-correndo-rv { animation: none !important; }
+        }
+
+        /* Barra de rolagem discreta nas areas densas. */
+        .scroll-slim { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        .scroll-slim::-webkit-scrollbar { height: 8px; width: 8px; }
+        .scroll-slim::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .scroll-slim::-webkit-scrollbar-track { background: transparent; }
+    </style>
     <!-- Animação do texto corrido (marquee) usado no aviso do campo de pontos manuais da RV -->
     <style>
         @keyframes correrTextoRV {
@@ -98,35 +260,25 @@
         // leitura em todo carregamento de página.
     </script>
 </head>
-<body class="text-slate-800 font-sans min-h-screen p-4 md:p-8" style="background-image: url(&quot;img/fundo.jpg&quot;); background-size: cover; background-position: center; background-attachment: fixed; background-repeat: no-repeat;">
+<body class="app-bg text-slate-800 font-sans min-h-screen">
 
-    <div class="max-w-7xl mx-auto">
-        <!-- Título Principal -->
-        <header class="mb-8 text-center">
-            <div class="inline-block bg-white rounded-2xl shadow-md border border-slate-200 px-6 py-4">
-                <h1 class="text-3xl font-extrabold text-slate-900 flex items-center justify-center gap-2">
-                    <i data-lucide="wrench" class="w-7 h-7 text-blue-600"></i> REGISTRO DE O.S
-                </h1>
-                <p class="text-3xl font-extrabold text-slate-900 tracking-wide -mt-0.5">TÉCNICO EM MANUTENÇÃO</p>
-                <p class="text-slate-600 mt-1">Gerencie e Acompanhe sua produção diária, semanal e mensal sincronizada na nuvem.</p>
-            </div>
-        </header>
+    <!-- ============================================================
+         BARRA SUPERIOR
+         Substitui o cartao branco centralizado que anunciava o nome do
+         sistema em 30px. Uma barra fixa faz duas coisas que o cartao nao
+         fazia: identifica o produto sem ocupar a primeira dobra, e da
+         lugar permanente para quem esta logado e para o botao de sair.
+         ============================================================ -->
+    <div class="sticky top-0 z-40 glass">
+        <div class="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between gap-4">
 
-        <!-- TELA DE AUTENTICAÇÃO / SELEÇÃO DE COLABORADOR (BLOQUEIA O PAINEL ATÉ LOGIN VÁLIDO) -->
-        <div id="telaAutenticacaoColaborador" class="max-w-xl mx-auto my-12">
-
-            <!-- LOGO GRANDE CENTRALIZADA -->
-            <div class="flex flex-col items-center gap-2 mb-6">
-                <div class="w-20 h-20 rounded-2xl bg-blue-600 shadow-lg shadow-blue-600/30 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" class="w-11 h-11" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                        <!-- capacete -->
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 shrink-0 rounded-ctl bg-brand-600 shadow-glow flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6.5 7.2a5.5 5.5 0 0 1 11 0" />
                         <rect x="5.8" y="6.6" width="12.4" height="1.6" rx="0.8" fill="white" stroke="none" />
-                        <!-- cabeça -->
                         <circle cx="12" cy="9.4" r="2.6" fill="white" stroke="none" />
-                        <!-- corpo -->
                         <path d="M7 21v-2a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2" />
-                        <!-- prancheta -->
                         <rect x="14.5" y="13.3" width="6" height="7.7" rx="1" fill="white" stroke="none" />
                         <rect x="16.3" y="12.4" width="2.4" height="1.6" rx="0.5" fill="#2563eb" stroke="none" />
                         <line x1="16" y1="16" x2="19" y2="16" stroke="#2563eb" stroke-width="1" />
@@ -134,78 +286,130 @@
                         <line x1="16" y1="19.2" x2="18" y2="19.2" stroke="#2563eb" stroke-width="1" />
                     </svg>
                 </div>
-                <span class="text-[11px] font-bold tracking-[0.15em] text-white">Criador <b class="text-white">D.W.P</b></span>
+                <div class="min-w-0 leading-none">
+                    <div class="font-display text-[19px] font-semibold text-white tracking-[-0.03em]">SurgeOS</div>
+                    <div class="text-[11px] text-white/55 font-medium truncate">Registro de O.S · Tecnico em Manutencao</div>
+                </div>
             </div>
 
-            <div class="bg-white p-8 rounded-2xl shadow-md border border-slate-200 space-y-6">
-
-                <div class="text-center space-y-2">
-                    <h2 class="text-2xl font-bold text-slate-900 flex items-center justify-center gap-2">
-                        <i data-lucide="user-round" class="w-6 h-6 text-blue-600"></i> Identificação do Colaborador
-                    </h2>
-                    <p class="text-sm text-slate-600">Selecione seu nome na lista e digite sua senha de acesso para liberar o painel de serviços.</p>
+            <!-- Identidade do colaborador logado. Estava dentro do cartao do
+                 formulario, onde sumia ao rolar a pagina; aqui fica sempre
+                 visivel, que e o ponto de mostrar quem esta lancando. -->
+            <div id="barraUsuario" class="hidden items-center gap-2">
+                <div class="hidden sm:flex flex-col items-end leading-tight">
+                    <span class="text-[10px] uppercase tracking-[0.1em] text-white/45 font-semibold">Autenticado</span>
+                    <span id="labelColaboradorLogado" class="text-[13px] font-semibold text-white"></span>
                 </div>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Colaborador</label>
-                    <select id="selectColaboradorLogin" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">-- Selecione o Colaborador --</option>
-                        <option value="ARLEM FREIRE">ARLEM FREIRE</option>
-                        <option value="BRUNO SOUZA">BRUNO SOUZA</option>
-                        <option value="CLEUBER SEIXAS">CLEUBER SEIXAS</option>
-                        <option value="DIEYSON DE PAULA">DIEYSON DE PAULA</option>
-                        <option value="FRANK BARBOSA">FRANK BARBOSA</option>
-                        <option value="PAULO FLORES">PAULO FLORES</option>
-                    </select>
+                <div class="w-8 h-8 rounded-full bg-emerald-400/15 border border-emerald-300/30 flex items-center justify-center">
+                    <i data-lucide="user-round" class="w-4 h-4 text-emerald-300"></i>
                 </div>
+                <button onclick="fazerLogout()" title="Sair / trocar de colaborador" class="btn btn-sm text-white/70 hover:text-white hover:bg-white/10 border border-white/10">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Sair</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
-                <div id="divGrupoSenhaLogin">
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Senha de Acesso</label>
-                    <input type="password" id="inputSenhaLogin" placeholder="Digite sua senha" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+
+        <!-- ============================================================
+             TELA DE AUTENTICACAO
+             Esta e a unica superficie do sistema que existe para causar
+             impressao - todas as outras existem para operar. Por isso e o
+             unico lugar onde a tipografia cresce e o fundo escuro aparece
+             inteiro. Bloqueia o painel ate haver login valido.
+             ============================================================ -->
+        <div id="telaAutenticacaoColaborador" class="max-w-md mx-auto my-10 md:my-16 anim-in">
+
+            <div class="text-center mb-7">
+                <div class="w-16 h-16 mx-auto rounded-card bg-brand-600 shadow-glow flex items-center justify-center mb-5">
+                    <svg viewBox="0 0 24 24" class="w-9 h-9" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6.5 7.2a5.5 5.5 0 0 1 11 0" />
+                        <rect x="5.8" y="6.6" width="12.4" height="1.6" rx="0.8" fill="white" stroke="none" />
+                        <circle cx="12" cy="9.4" r="2.6" fill="white" stroke="none" />
+                        <path d="M7 21v-2a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2" />
+                        <rect x="14.5" y="13.3" width="6" height="7.7" rx="1" fill="white" stroke="none" />
+                        <rect x="16.3" y="12.4" width="2.4" height="1.6" rx="0.5" fill="#2563eb" stroke="none" />
+                        <line x1="16" y1="16" x2="19" y2="16" stroke="#2563eb" stroke-width="1" />
+                        <line x1="16" y1="17.6" x2="19" y2="17.6" stroke="#2563eb" stroke-width="1" />
+                        <line x1="16" y1="19.2" x2="18" y2="19.2" stroke="#2563eb" stroke-width="1" />
+                    </svg>
                 </div>
+                <h1 class="display text-[40px] md:text-[46px] font-semibold text-white">Bem-vindo ao<br>SurgeOS</h1>
+                <p class="text-sm text-white/55 mt-3 max-w-xs mx-auto leading-relaxed">
+                    Selecione seu nome e informe a senha para abrir o painel de servicos.
+                </p>
+            </div>
 
-                <div id="divGrupoNovaSenha" class="hidden p-4 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
-                    <h3 class="text-xs font-bold text-amber-800 uppercase tracking-wider">🔒 Alteração de Senha Obrigatória (Primeiro Acesso)</h3>
-                    <p class="text-xs text-amber-700">Você entrou com uma senha temporária. Defina agora uma senha pessoal, com no mínimo 6 caracteres, para continuar.</p>
+            <div class="glass rounded-card shadow-pop p-6 md:p-7 space-y-5">
+
+                <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Nova Senha</label>
-                        <input type="password" id="inputNovaSenhaCadastro" placeholder="Digite sua nova senha" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <label class="lbl text-white/50">Colaborador</label>
+                        <select id="selectColaboradorLogin" class="field font-semibold">
+                            <option value="">-- Selecione o Colaborador --</option>
+                            <option value="ARLEM FREIRE">ARLEM FREIRE</option>
+                            <option value="BRUNO SOUZA">BRUNO SOUZA</option>
+                            <option value="CLEUBER SEIXAS">CLEUBER SEIXAS</option>
+                            <option value="DIEYSON DE PAULA">DIEYSON DE PAULA</option>
+                            <option value="FRANK BARBOSA">FRANK BARBOSA</option>
+                            <option value="PAULO FLORES">PAULO FLORES</option>
+                        </select>
+                    </div>
+
+                    <div id="divGrupoSenhaLogin">
+                        <label class="lbl text-white/50">Senha de acesso</label>
+                        <input type="password" id="inputSenhaLogin" placeholder="Digite sua senha" class="field">
+                    </div>
+
+                    <div id="divGrupoNovaSenha" class="hidden p-4 rounded-ctl bg-amber-400/10 border border-amber-300/30 space-y-3">
+                        <h3 class="text-[11px] font-semibold text-amber-200 uppercase tracking-[0.09em] flex items-center gap-1.5">
+                            <i data-lucide="lock" class="w-3.5 h-3.5"></i> Troca de senha obrigatoria
+                        </h3>
+                        <p class="text-xs text-amber-100/70 leading-relaxed">Voce entrou com uma senha temporaria. Defina agora uma senha pessoal, com no minimo 6 caracteres, para continuar.</p>
+                        <div>
+                            <label class="lbl text-amber-200/60">Nova senha</label>
+                            <input type="password" id="inputNovaSenhaCadastro" placeholder="Digite sua nova senha" class="field">
+                        </div>
                     </div>
                 </div>
 
-                <button id="btnSubmitLogin" onclick="tentarAutenticarColaborador()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 text-sm disabled:opacity-60 disabled:cursor-not-allowed">
-                    Entrar no Sistema
+                <button id="btnSubmitLogin" onclick="tentarAutenticarColaborador()" class="btn-primary btn-block h-11">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Entrar no sistema
                 </button>
 
-                <div class="text-center pt-1">
-                    <button onclick="abrirLoginAdmin()" class="text-xs font-semibold text-slate-400 hover:text-slate-600 underline inline-flex items-center gap-1">
-                        <i data-lucide="shield" class="w-3.5 h-3.5"></i> Área do Administrador
+                <div class="text-center pt-1 border-t border-white/10">
+                    <button onclick="abrirLoginAdmin()" class="btn btn-sm text-white/45 hover:text-white hover:bg-white/10 mt-3">
+                        <i data-lucide="shield" class="w-3.5 h-3.5"></i> Area do administrador
                     </button>
                 </div>
             </div>
-            </div>
 
-            <!-- O formulário de cadastro que ficava aqui foi movido para o Painel
+            <p class="text-center text-[10px] font-semibold tracking-[0.18em] text-white/30 mt-6 uppercase">
+                Criado por D.W.P
+            </p>
+
+            <!-- O formulario de cadastro que ficava aqui foi movido para o Painel
                  Administrativo. Nesta tela, aberta a qualquer visitante, ele deixava
-                 qualquer pessoa criar o próprio acesso — e a senha padrão estava
-                 impressa ao lado. As regras do Firestore agora recusam a criação por
-                 quem não é administrador, então o formulário aqui só produziria um
-                 erro; tirá-lo é mais honesto do que deixá-lo falhar. -->
+                 qualquer pessoa criar o proprio acesso - e a senha padrao estava
+                 impressa ao lado. As regras do Firestore agora recusam a criacao por
+                 quem nao e administrador, entao o formulario aqui so produziria um
+                 erro; tira-lo e mais honesto do que deixa-lo falhar. -->
         </div>
 
         <!-- MODAL: LOGIN DO ADMINISTRADOR -->
-        <div id="modalLoginAdmin" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+        <div id="modalLoginAdmin" class="hidden fixed inset-0 bg-ink-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="card shadow-pop max-w-sm w-full p-6 space-y-5">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5 text-blue-600"></i> Login do Administrador</h2>
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5 text-brand-600"></i> Login do Administrador</h2>
                     <button onclick="fecharLoginAdmin()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Senha de Administrador</label>
-                    <input type="password" id="inputSenhaAdmin" placeholder="Digite a senha de administrador" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="password" id="inputSenhaAdmin" placeholder="Digite a senha de administrador" class="field">
                 </div>
-                <button onclick="tentarLoginAdmin()" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-2.5 rounded-lg text-sm transition">
+                <button onclick="tentarLoginAdmin()" class="btn-dark btn-block">
                     Entrar
                 </button>
             </div>
@@ -213,36 +417,36 @@
 
         <!-- PAINEL ADMINISTRATIVO -->
         <div id="painelAdmin" class="hidden max-w-4xl mx-auto space-y-6 my-8">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
-                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5 text-blue-600"></i> Painel Administrativo</h2>
-                <button onclick="sairAdmin()" class="text-xs font-bold text-red-600 hover:text-red-800 underline bg-white px-2.5 py-1 rounded-lg border border-red-200">
+            <div class="card p-5 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2"><i data-lucide="shield" class="w-5 h-5 text-brand-600"></i> Painel Administrativo</h2>
+                <button onclick="sairAdmin()" class="btn btn-sm btn-danger">
                     Sair
                 </button>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-blue-600"></i> Cadastrar Novo Colaborador</h3>
+            <div class="card p-5 space-y-3">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4 text-brand-600"></i> Cadastrar Novo Colaborador</h3>
                 <div class="flex flex-col md:flex-row gap-2">
-                    <input type="text" id="inputNomeNovoColab" placeholder="Nome completo do colaborador" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button onclick="cadastrarColaborador()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition">
+                    <input type="text" id="inputNomeNovoColab" placeholder="Nome completo do colaborador" class="field flex-1">
+                    <button onclick="cadastrarColaborador()" class="btn-primary">
                         Cadastrar
                     </button>
                 </div>
                 <p class="text-xs text-slate-500">O sistema gera uma <b class="text-slate-700">senha temporária aleatória</b> e mostra na tela. Entregue-a ao colaborador — ele será obrigado a definir a própria senha no primeiro acesso.</p>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <div class="card p-5 space-y-3">
                 <div class="flex justify-between items-center flex-wrap gap-2">
-                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-blue-600"></i> Colaboradores e Última Atividade</h3>
-                    <button onclick="abrirRanking()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2 px-3 rounded-lg transition flex items-center gap-1.5">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-brand-600"></i> Colaboradores e Última Atividade</h3>
+                    <button onclick="abrirRanking()" class="btn btn-sm btn-soft">
                         <i data-lucide="trophy" class="w-3.5 h-3.5"></i> Ver Ranking Geral
                     </button>
                 </div>
                 <p id="ultimoAcessoResumo" class="text-xs text-slate-500"></p>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                <div class="overflow-x-auto scroll-slim">
+                    <table class="tbl">
                         <thead>
-                            <tr class="text-xs text-slate-500 uppercase border-b border-slate-200">
+                            <tr>
                                 <th class="py-2">Nome</th>
                                 <th class="py-2">Último Acesso</th>
                                 <th class="py-2">Status Senha</th>
@@ -256,8 +460,8 @@
         </div>
 
         <!-- MODAL: RANKING GERAL DE PONTOS -->
-        <div id="modalRanking" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div id="modalRanking" class="hidden fixed inset-0 bg-ink-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="card shadow-pop max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto scroll-slim">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i> Ranking Geral</h2>
                     <button onclick="fecharRanking()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
@@ -267,10 +471,10 @@
         </div>
 
         <!-- MODAL: AUDITORIA COMPLETA DE PONTOS -->
-        <div id="modalAuditoria" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div id="modalAuditoria" class="hidden fixed inset-0 bg-ink-950/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="card shadow-pop max-w-3xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto scroll-slim">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2"><i data-lucide="search-check" class="w-5 h-5 text-blue-600"></i> Auditoria de Pontos — <span id="tituloMesAuditoria">Mês</span></h2>
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2"><i data-lucide="search-check" class="w-5 h-5 text-brand-600"></i> Auditoria de Pontos — <span id="tituloMesAuditoria">Mês</span></h2>
                     <button onclick="fecharAuditoria()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">&times;</button>
                 </div>
                 <p class="text-xs text-slate-500">
@@ -286,14 +490,14 @@
                     forem, de fato, erro ou duplicidade continua sendo o jeito definitivo de limpar a base.
                 </p>
                 <div class="flex justify-end">
-                    <button id="btnRecalcularAuditoria" onclick="recalcularPontosAuditoria()" class="text-blue-600 hover:text-blue-800 text-xs font-semibold flex items-center gap-1 transition bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg">
+                    <button id="btnRecalcularAuditoria" onclick="recalcularPontosAuditoria()" class="btn btn-sm text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-100">
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Recalcular Pontos do Mês
                     </button>
                 </div>
                 <div id="resumoAuditoria" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center"></div>
-                <div class="overflow-x-auto border border-slate-100 rounded-xl">
-                    <table class="w-full text-xs text-left">
-                        <thead class="bg-slate-50 text-slate-500 uppercase font-bold">
+                <div class="overflow-x-auto scroll-slim border border-slate-200 rounded-ctl max-h-[46vh] overflow-y-auto">
+                    <table class="tbl text-xs">
+                        <thead>
                             <tr>
                                 <th class="p-2">Data</th>
                                 <th class="p-2">Protocolo</th>
@@ -311,51 +515,47 @@
         </div>
 
         <!-- PAINEL PRINCIPAL (OCULTO ATÉ A AUTENTICAÇÃO BEM-SUCEDIDA) -->
-        <div id="painelPrincipalSistema" class="hidden grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- FORMULÁRIO DE LANÇAMENTO / EDIÇÃO -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit space-y-4">
-                
-                <!-- IDENTIFICAÇÃO DO COLABORADOR LOGADO -->
-                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex justify-between items-center">
-                    <div>
-                        <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Colaborador Autenticado</span>
-                        <span id="labelColaboradorLogado" class="text-sm font-black text-emerald-900"></span>
-                    </div>
-                    <button onclick="fazerLogout()" class="text-xs font-bold text-red-600 hover:text-red-800 underline bg-white px-2.5 py-1 rounded-lg border border-red-200">
-                        Sair / Trocar
-                    </button>
+        <div id="painelPrincipalSistema" class="hidden grid-cols-1 lg:grid-cols-3 gap-6 anim-in">
+
+            <!-- FORMULARIO DE LANCAMENTO / EDICAO
+                 Fica grudado no topo em telas grandes: o tecnico lanca varias
+                 O.S. seguidas e nao deveria ter que rolar de volta a cada uma.
+                 A identificacao do colaborador saiu daqui e foi para a barra
+                 superior, onde nao desaparece ao rolar a pagina. -->
+            <div class="card p-5 md:p-6 h-fit space-y-5 lg:sticky lg:top-20">
+
+                <div class="flex items-center justify-between gap-2 pb-4 border-b border-slate-100">
+                    <h2 id="tituloForm" class="section-h"><i data-lucide="file-plus-2" class="w-5 h-5 text-brand-600"></i> Novo Registro</h2>
+                    <span class="chip-brand">O.S</span>
                 </div>
 
-                <h2 id="tituloForm" class="text-xl font-bold text-slate-900 flex items-center gap-2"><i data-lucide="file-plus-2" class="w-5 h-5 text-blue-600"></i> Novo Registro</h2>
-                
                 <form id="formServico" class="space-y-4">
                     <input type="hidden" id="editId" value="">
                     
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1">Data do Serviço</label>
-                            <input type="date" id="dataTrabalho" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="date" id="dataTrabalho" required class="field">
                         </div>
 
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1">Nº Protocolo / OS</label>
-                            <input type="text" id="protocolo" placeholder="Ex: 2026123456" oninput="this.value = this.value.replace(/[^0-9]/g, ''); verificarProtocoloDuplicado();" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="protocolo" placeholder="Ex: 2026123456" oninput="this.value = this.value.replace(/[^0-9]/g, ''); verificarProtocoloDuplicado();" class="field">
                             <p id="avisoProtocoloDuplicado" class="hidden text-xs font-bold text-red-600 mt-1">PROTOCOLO JÁ REGISTRADO, FAVOR CORRIGIR</p>
                         </div>
                     </div>
 
                     <!-- Campos do Cliente (Nome e WhatsApp) -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-ctl border border-slate-100">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Nome do Cliente</label>
-                            <input type="text" id="nomeCliente" placeholder="Ex: João Silva" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <input type="text" id="nomeCliente" placeholder="Ex: João Silva" class="field">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp</label>
                             <div class="flex items-center gap-1.5">
-                                <button type="button" onclick="enviarMensagemCliente(document.getElementById('whatsappCliente').value, document.getElementById('nomeCliente').value)" title="Enviar mensagem via WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded-lg transition shrink-0"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>
-                                <input type="text" id="whatsappCliente" placeholder="Ex: 47999999999" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <button type="button" onclick="enviarMensagemCliente(document.getElementById('whatsappCliente').value, document.getElementById('nomeCliente').value)" title="Enviar mensagem via WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded-ctl transition shrink-0"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i></button>
+                                <input type="text" id="whatsappCliente" placeholder="Ex: 47999999999" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="field">
                             </div>
                         </div>
                     </div>
@@ -363,18 +563,18 @@
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">Tipo de Serviço</label>
                         <div class="flex items-center gap-2">
-                            <select id="tipoServico" onchange="atualizarSubcategorias()" class="w-1/2 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <select id="tipoServico" onchange="atualizarSubcategorias()" class="field w-1/2">
                                 <option value="SIMPLES">SIMPLES</option>
                                 <option value="TROCA FLAT">TROCA FLAT</option>
                             </select>
                             <input type="hidden" id="tipoCliente" value="PF">
-                            <select id="subcategoriaServico" class="w-1/2 px-3 py-2 border border-slate-300 rounded-lg text-slate-400 font-normal focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <select id="subcategoriaServico" class="field w-1/2 text-slate-400 font-normal">
                             </select>
                         </div>
                     </div>
 
                     <!-- Informação de pontos -->
-                    <div id="infoPontos" class="p-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
+                    <div id="infoPontos" class="p-3 bg-brand-50 text-brand-700 rounded-ctl text-sm font-medium">
                         ℹ️ Serviço SIMPLES: 39 pontos por unidade.
                     </div>
 
@@ -388,23 +588,23 @@
                                 <path d="M12 19l-5-5" />
                                 <path d="M12 19l5-5" />
                             </svg>
-                            <div class="flex-1 overflow-hidden rounded-lg bg-amber-100 border border-amber-300 py-1 px-1">
+                            <div class="flex-1 overflow-hidden rounded-ctl bg-amber-100 border border-amber-300 py-1 px-1">
                                 <span class="texto-correndo-rv text-[11px] font-bold text-amber-700">INSERIR TOTAL DE PONTOS DA RV MANUALMENTE : PASSE O MOUSE AQUI&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INSERIR TOTAL DE PONTOS DA RV MANUALMENTE : PASSE O MOUSE AQUI&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
                             </div>
                         </div>
-                        <input type="number" id="pontosManuais" placeholder="INSERIR TOTAL DE PONTOS DA RV MANUALMENTE" title="Exemplo: se na tabela de RV geral que enviaram no grupo operacional você estiver, por exemplo, com 2359 pontos, insira 2359 pontos neste campo. A partir daí, adicione cada serviço executado normalmente, um por um, dali em diante." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-200">
+                        <input type="number" id="pontosManuais" placeholder="INSERIR TOTAL DE PONTOS DA RV MANUALMENTE" title="Exemplo: se na tabela de RV geral que enviaram no grupo operacional você estiver, por exemplo, com 2359 pontos, insira 2359 pontos neste campo. A partir daí, adicione cada serviço executado normalmente, um por um, dali em diante." class="field font-semibold bg-slate-100">
                     </div>
 
                     <div class="space-y-2">
-                        <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-200">
+                        <button type="submit" id="btnSubmit" class="btn-primary btn-block">
                             Registrar Serviço
                         </button>
-                        <button type="button" id="btnCancelarEdicao" onclick="cancelarEdicao()" class="hidden w-full bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold py-2.5 px-4 rounded-lg transition duration-200">
+                        <button type="button" id="btnCancelarEdicao" onclick="cancelarEdicao()" class="hidden btn-soft btn-block">
                             Cancelar
                         </button>
 
                         <!-- Botão de Ranking Geral (logo abaixo de Registrar Serviço) -->
-                        <button type="button" onclick="abrirRanking()" class="w-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                        <button type="button" onclick="abrirRanking()" class="btn-soft btn-block">
                             <i data-lucide="trophy" class="w-3.5 h-3.5"></i> Ver Ranking Geral de Pontos
                         </button>
                     </div>
@@ -412,7 +612,7 @@
                     <!-- Botão Selecionável de Meses Anteriores -->
                     <div class="pt-2">
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Visualizar Mês Específico</label>
-                        <select id="selectMesAnterior" onchange="mudarMesReferencia()" class="w-full px-3 py-2 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="selectMesAnterior" onchange="mudarMesReferencia()" class="field bg-brand-50 text-brand-800 border-brand-200 font-semibold">
                             <!-- Preenchido dinamicamente -->
                         </select>
                     </div>
@@ -420,17 +620,17 @@
 
                 <!-- Seção de Envio de Relatório (seleção de canal) -->
                 <div class="pt-4 border-t border-slate-100 relative">
-                    <button type="button" onclick="toggleMenuRelatorio()" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2.5 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2">
+                    <button type="button" onclick="toggleMenuRelatorio()" class="btn-dark btn-block">
                         <i data-lucide="send" class="w-3.5 h-3.5"></i> Enviar Relatório
                     </button>
 
-                    <div id="painelEnviarRelatorio" class="hidden mt-3 space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div id="painelEnviarRelatorio" class="hidden mt-3 space-y-3 p-3 bg-slate-50 rounded-ctl border border-slate-100">
                         <div class="flex gap-4 text-xs font-semibold text-slate-700">
                             <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="tipoRelatorioEnvio" value="diario" class="text-blue-600 focus:ring-blue-500"> Diário
+                                <input type="radio" name="tipoRelatorioEnvio" value="diario" class="text-brand-600 focus:ring-brand-500"> Diário
                             </label>
                             <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="tipoRelatorioEnvio" value="mensal" checked class="text-blue-600 focus:ring-blue-500"> Mensal
+                                <input type="radio" name="tipoRelatorioEnvio" value="mensal" checked class="text-brand-600 focus:ring-brand-500"> Mensal
                             </label>
                         </div>
                         <p class="text-[10px] text-slate-400 leading-snug">
@@ -439,16 +639,16 @@
                             lançamento por lançamento, é baixado junto automaticamente.
                         </p>
                         <div class="grid grid-cols-2 gap-2">
-                            <button type="button" id="btnCanalEmail" onclick="selecionarCanalRelatorio('email')" class="text-xs font-bold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">
+                            <button type="button" id="btnCanalEmail" onclick="selecionarCanalRelatorio('email')" class="btn btn-sm btn-soft w-full">
                                 <i data-lucide="mail" class="w-3.5 h-3.5"></i> E-mail
                             </button>
-                            <button type="button" id="btnCanalWhatsapp" onclick="selecionarCanalRelatorio('whatsapp')" class="text-xs font-bold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">
+                            <button type="button" id="btnCanalWhatsapp" onclick="selecionarCanalRelatorio('whatsapp')" class="btn btn-sm btn-soft w-full">
                                 <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> WhatsApp
                             </button>
                         </div>
                         <div id="campoDestinoRelatorio" class="hidden space-y-2">
-                            <input type="text" id="destinoContato" placeholder="E-mail ou WhatsApp (com DDD)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button type="button" onclick="confirmarEnvioRelatorio()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3 rounded-lg transition">
+                            <input type="text" id="destinoContato" placeholder="E-mail ou WhatsApp (com DDD)" class="field">
+                            <button type="button" onclick="confirmarEnvioRelatorio()" class="btn-primary btn-block btn-sm">
                                 Enviar Agora
                             </button>
                         </div>
@@ -457,119 +657,145 @@
 
             </div>
 
-            <!-- PAINEL DE RELATÓRIOS E SOMAS -->
+            <!-- ============================================================
+                 COLUNA DE ANALISE
+                 Ordem deliberada: primeiro o resultado (KPIs), depois a forma
+                 do mes (dashboard), depois as metas, depois as ferramentas de
+                 base e por ultimo o detalhe linha a linha. Antes, os totais
+                 apareciam em terceiro lugar, abaixo de filtros - quem abre o
+                 painel quer saber quanto fez, nao qual filtro esta ativo.
+                 ============================================================ -->
             <div class="lg:col-span-2 space-y-6">
 
-                <!-- Painel Separado: Metas de Pontuação e Projeções -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b border-slate-100 pb-3">
-                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                            <i data-lucide="target" class="w-4 h-4 text-blue-600"></i> Projeção de Metas e Média Diária
-                        </h3>
+                <!-- KPIs ------------------------------------------------- -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                    <div class="kpi">
+                        <span class="kpi-label">Total do dia</span>
+                        <div class="kpi-value"><span id="txtTotalDia">0</span><span class="kpi-unit">pts</span></div>
+                        <p class="kpi-foot">Dia selecionado no filtro</p>
+                    </div>
+                    <div class="kpi">
+                        <span class="kpi-label">Total da semana</span>
+                        <div class="kpi-value"><span id="txtTotalSemana">0</span><span class="kpi-unit">pts</span></div>
+                        <p class="kpi-foot">Segunda a domingo</p>
+                    </div>
+                    <div class="kpi">
+                        <span class="kpi-label">Total do mes</span>
+                        <div class="kpi-value text-brand-700"><span id="txtTotalMes">0</span><span class="kpi-unit text-brand-300">pts</span></div>
+                        <p class="kpi-foot"><span id="infoMediaMesUteisTopo">Media Mes (Uteis): 0 pts/dia</span></p>
+                    </div>
+                    <div class="kpi">
+                        <span class="kpi-label">Servicos no mes</span>
+                        <div class="kpi-value"><span id="qtdTarefasMes">0</span><span class="kpi-unit">O.S</span></div>
+                        <p class="kpi-foot"><span id="pontosTarefasMes">0 pts</span> validados</p>
+                    </div>
+                </div>
+
+                <!-- DASHBOARD -------------------------------------------
+                     Os graficos sao SVG montado no proprio JS. Nenhuma
+                     biblioteca de grafico entra aqui: seriam ~90 KB extras
+                     para desenhar 30 retangulos, num app que roda no celular
+                     do tecnico com o dado que ja esta em memoria. -->
+                <div class="card card-pad space-y-5">
+                    <div class="card-head">
+                        <h3 class="card-title"><i data-lucide="bar-chart-3" class="w-4 h-4 text-brand-600"></i> Dashboard do mes</h3>
                         <div class="flex items-center gap-2">
-                            <div id="infoMediaDiaria" class="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full">
-                                0 pts/dia
-                            </div>
-                            <div id="infoMediaMesUteisTopo" class="text-xs bg-blue-50 text-blue-700 font-bold px-3 py-1 rounded-full">
-                                Média Mês (Úteis): 0 pts/dia
-                            </div>
+                            <span id="infoMediaDiaria" class="chip-mute">0 pts/dia</span>
+                            <span id="dashMelhorDia" class="chip-ok">Melhor dia: -</span>
                         </div>
+                    </div>
+
+                    <!-- Producao dia a dia -->
+                    <div>
+                        <div class="flex items-baseline justify-between mb-2">
+                            <span class="eyebrow">Producao por dia</span>
+                            <span id="dashLegendaDias" class="text-[11px] text-slate-400"></span>
+                        </div>
+                        <div id="graficoDiario" class="w-full"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
+                        <!-- Composicao por tipo de servico -->
+                        <div>
+                            <span class="eyebrow">Composicao por tipo</span>
+                            <div id="graficoTipos" class="mt-3 space-y-2.5"></div>
+                        </div>
+                        <!-- Ritmo x meta -->
+                        <div>
+                            <span class="eyebrow">Ritmo da meta principal</span>
+                            <div id="graficoRitmo" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- METAS E PROJECAO ------------------------------------- -->
+                <div class="card card-pad space-y-4">
+                    <div class="card-head border-b border-slate-100 pb-3">
+                        <h3 class="card-title"><i data-lucide="target" class="w-4 h-4 text-brand-600"></i> Projecao de metas</h3>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="painelMetas">
                         <!-- Preenchido via JavaScript -->
                     </div>
                 </div>
 
-                <!-- Filtro de Data e Resumo Mensal -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Filtrar por Dia Específico</label>
-                            <input type="date" id="filtroData" onchange="calcularTotais()" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <!-- FILTRO E FERRAMENTAS DE BASE -------------------------- -->
+                <div class="card card-pad">
+                    <div class="flex flex-col md:flex-row md:items-end gap-4">
+                        <div class="md:w-56">
+                            <label class="lbl">Filtrar por dia</label>
+                            <input type="date" id="filtroData" onchange="calcularTotais()" class="field">
                         </div>
-                        <div class="mt-4 flex justify-between items-center flex-wrap gap-2">
-                            <span class="text-xs text-slate-500 font-medium">Gerenciar base:</span>
-                            <div class="flex items-center gap-3 flex-wrap">
-                                <button onclick="abrirAuditoria()" class="text-emerald-700 hover:text-emerald-900 text-xs font-semibold flex items-center gap-1 transition">
-                                    <i data-lucide="search-check" class="w-3.5 h-3.5"></i> Auditoria Completa
-                                </button>
-                                <button onclick="recalcularTotais()" class="text-blue-600 hover:text-blue-800 text-xs font-semibold flex items-center gap-1 transition">
-                                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Recalcular Totais
-                                </button>
-                                <button onclick="limparRegistros()" class="text-red-600 hover:text-red-800 text-xs font-semibold flex items-center gap-1 transition">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Limpar Meus Registros
-                                </button>
-                            </div>
+                        <div class="flex items-center gap-2 flex-wrap md:pb-0.5">
+                            <button onclick="abrirAuditoria()" class="btn btn-sm btn-soft">
+                                <i data-lucide="search-check" class="w-3.5 h-3.5"></i> Auditoria completa
+                            </button>
+                            <button onclick="recalcularTotais()" class="btn btn-sm btn-soft">
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Recalcular totais
+                            </button>
+                            <button onclick="limparRegistros()" class="btn btn-sm btn-danger">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Limpar meus registros
+                            </button>
                         </div>
                     </div>
-
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
-                        <div>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Resumo do Mês (Meu Total)</span>
-                            <div class="mt-2 flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <div>
-                                    <p class="text-xs text-slate-500 font-semibold">Total de Tarefas</p>
-                                    <p id="qtdTarefasMes" class="text-lg font-black text-slate-800">0</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs text-slate-500 font-semibold">Total de Pontos</p>
-                                    <p id="pontosTarefasMes" class="text-lg font-black text-blue-600">0 pts</p>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="text-[11px] text-slate-400 mt-2">* Exibindo apenas os dados do técnico logado.</p>
-                    </div>
+                    <p class="text-[11px] text-slate-400 mt-3">Todos os numeros desta coluna consideram apenas os lancamentos do colaborador autenticado.</p>
                 </div>
 
-                <!-- Métricas (Cards) -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL DO DIA</span>
-                        <h3 id="txtTotalDia" class="text-2xl font-black text-slate-800 mt-1">0 Pontos</h3>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL DA SEMANA</span>
-                        <h3 id="txtTotalSemana" class="text-2xl font-black text-slate-800 mt-1">0 Pontos</h3>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">TOTAL DO MÊS</span>
-                        <h3 id="txtTotalMes" class="text-2xl font-black text-slate-800 mt-1">0 Pontos</h3>
-                    </div>
-                </div>
 
                 <!-- Tabela de Histórico -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-3">
-                        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-blue-600"></i> Meus Lançamentos <span id="badgeVisualizacao" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 uppercase tracking-wide">Hoje</span></h3>
+                <div class="card overflow-hidden">
+                    <div class="p-4 md:px-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <h3 class="section-h">
+                            <i data-lucide="clipboard-list" class="w-5 h-5 text-brand-600"></i> Meus lancamentos
+                            <span id="badgeVisualizacao" class="chip-brand">Hoje</span>
+                        </h3>
                         <div class="flex items-center gap-2">
-                            <span class="text-xs text-slate-500 font-semibold">Ordem:</span>
-                            <select id="ordemHistorico" onchange="calcularTotais()" class="px-2 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none">
-                                <option value="reverso" selected>Mais Recentes no Topo</option>
-                                <option value="cronologico">Dia 01 ao Fim no Topo</option>
+                            <select id="ordemHistorico" onchange="calcularTotais()" class="field h-9 w-auto text-xs font-semibold bg-slate-50" title="Ordem da listagem">
+                                <option value="reverso" selected>Mais recentes no topo</option>
+                                <option value="cronologico">Dia 01 ao fim no topo</option>
                             </select>
-                        </div>
-                        <div class="relative">
-                            <button type="button" onclick="toggleMenuVisualizacao()" title="Escolher visualização da planilha" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition">
-                                <i data-lucide="inbox" class="w-4 h-4"></i>
-                            </button>
-                            <div id="menuVisualizacao" class="hidden absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-lg shadow-lg z-20 overflow-hidden">
-                                <button type="button" data-modo="dia" onclick="definirVisualizacaoTabela('dia')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Somente Serviços do Dia Selecionado</button>
-                                <button type="button" data-modo="ultimos8" onclick="definirVisualizacaoTabela('ultimos8')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100"><i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> Últimos Serviços (máx. 8)</button>
-                                <button type="button" data-modo="todos" onclick="definirVisualizacaoTabela('todos')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100"><i data-lucide="layers" class="w-3.5 h-3.5"></i> Todos os Serviços (do mês filtrado)</button>
-                                <button type="button" data-modo="tudo" onclick="definirVisualizacaoTabela('tudo')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2 border-t border-slate-100"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Todos os Protocolos (todas as datas)</button>
+                            <div class="relative">
+                                <button type="button" onclick="toggleMenuVisualizacao()" title="Escolher visualizacao da planilha" class="btn btn-sm btn-soft h-9 px-2.5">
+                                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                                </button>
+                                <div id="menuVisualizacao" class="hidden absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-ctl shadow-pop z-20 overflow-hidden p-1">
+                                    <button type="button" data-modo="dia" onclick="definirVisualizacaoTabela('dia')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 rounded-[8px] hover:bg-slate-100 flex items-center gap-2"><i data-lucide="calendar-days" class="w-3.5 h-3.5"></i> Somente o dia selecionado</button>
+                                    <button type="button" data-modo="ultimos8" onclick="definirVisualizacaoTabela('ultimos8')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 rounded-[8px] hover:bg-slate-100 flex items-center gap-2"><i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> Ultimos servicos (max. 8)</button>
+                                    <button type="button" data-modo="todos" onclick="definirVisualizacaoTabela('todos')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 rounded-[8px] hover:bg-slate-100 flex items-center gap-2"><i data-lucide="layers" class="w-3.5 h-3.5"></i> Todos do mes filtrado</button>
+                                    <button type="button" data-modo="tudo" onclick="definirVisualizacaoTabela('tudo')" class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-700 rounded-[8px] hover:bg-slate-100 flex items-center gap-2"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Todos os protocolos</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                    <div class="overflow-x-auto scroll-slim max-h-[62vh] overflow-y-auto">
+                        <table class="tbl">
                             <thead>
-                                <tr class="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                                    <th class="p-3">Data</th>
-                                    <th class="p-3">Protocolo</th>
-                                    <th class="p-3">Cliente</th>
-                                    <th class="p-3">Tipo / Subcategoria</th>
-                                    <th class="p-3">Pontos</th>
-                                    <th class="p-3 text-center">Ações</th>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Protocolo</th>
+                                    <th>Cliente</th>
+                                    <th>Tipo / Subcategoria</th>
+                                    <th class="text-right">Pontos</th>
+                                    <th class="text-center">Acoes</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelaHistorico" class="divide-y divide-slate-100 text-sm">
@@ -718,6 +944,8 @@
             const admin = document.getElementById('painelAdmin');
             if (admin) admin.classList.add('hidden');
             document.getElementById('telaAutenticacaoColaborador').classList.remove('hidden');
+            const barraSaindo = document.getElementById('barraUsuario');
+            if (barraSaindo) { barraSaindo.classList.add('hidden'); barraSaindo.classList.remove('flex'); }
             carregarListaPublicaDeNomes();
         }
 
@@ -963,6 +1191,10 @@
             painel.classList.remove('hidden');
             painel.classList.add('grid');
 
+            // A identidade vive na barra superior desde o redesenho; ela so
+            // faz sentido quando ha sessao, entao aparece junto com o painel.
+            const barra = document.getElementById('barraUsuario');
+            if (barra) { barra.classList.remove('hidden'); barra.classList.add('flex'); }
             document.getElementById('labelColaboradorLogado').innerText = tecnicoLogado;
             atualizarAvisoPontosManuaisRV();
             calcularTotais();
@@ -1032,8 +1264,8 @@
 
             document.querySelectorAll('#menuVisualizacao button[data-modo]').forEach(btn => {
                 const ativo = btn.getAttribute('data-modo') === modoVisualizacaoTabela;
-                btn.classList.toggle('bg-blue-50', ativo);
-                btn.classList.toggle('text-blue-700', ativo);
+                btn.classList.toggle('bg-brand-50', ativo);
+                btn.classList.toggle('text-brand-700', ativo);
                 btn.classList.toggle('font-bold', ativo);
             });
         }
@@ -1054,15 +1286,15 @@
             document.getElementById('painelEnviarRelatorio').classList.add('hidden');
             document.getElementById('campoDestinoRelatorio').classList.add('hidden');
             canalRelatorioSelecionado = null;
-            document.getElementById('btnCanalEmail').className = 'text-xs font-bold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100';
-            document.getElementById('btnCanalWhatsapp').className = 'text-xs font-bold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100';
+            document.getElementById('btnCanalEmail').className = 'btn btn-sm btn-soft w-full';
+            document.getElementById('btnCanalWhatsapp').className = 'btn btn-sm btn-soft w-full';
         }
 
         function selecionarCanalRelatorio(canal) {
             canalRelatorioSelecionado = canal;
-            const classeAtivaEmail = 'text-xs font-bold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 bg-slate-800 text-white';
-            const classeAtivaWpp = 'text-xs font-bold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 bg-emerald-600 text-white';
-            const classeInativa = 'text-xs font-bold py-2 px-3 rounded-lg transition flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100';
+            const classeAtivaEmail = 'btn btn-sm btn-dark w-full';
+            const classeAtivaWpp = 'btn btn-sm w-full bg-emerald-600 text-white hover:bg-emerald-700';
+            const classeInativa = 'btn btn-sm btn-soft w-full';
 
             document.getElementById('btnCanalEmail').className = canal === 'email' ? classeAtivaEmail : classeInativa;
             document.getElementById('btnCanalWhatsapp').className = canal === 'whatsapp' ? classeAtivaWpp : classeInativa;
@@ -1375,7 +1607,7 @@
 
             document.getElementById('tituloForm').innerHTML = '<i data-lucide="pencil-line" class="w-5 h-5 text-amber-600"></i> Editar Registro';
             document.getElementById('btnSubmit').innerText = "Salvar Alterações";
-            document.getElementById('btnSubmit').className = "w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-200";
+            document.getElementById('btnSubmit').className = "w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-4 rounded-ctl transition duration-200";
             document.getElementById('btnCancelarEdicao').classList.remove('hidden');
             if (window.lucide) lucide.createIcons();
 
@@ -1388,9 +1620,9 @@
             document.getElementById('dataTrabalho').value = hoje;
             document.getElementById('pontosManuais').value = '';
             selecionarTipoCliente('PF');
-            document.getElementById('tituloForm').innerHTML = '<i data-lucide="file-plus-2" class="w-5 h-5 text-blue-600"></i> Novo Registro';
+            document.getElementById('tituloForm').innerHTML = '<i data-lucide="file-plus-2" class="w-5 h-5 text-brand-600"></i> Novo Registro';
             document.getElementById('btnSubmit').innerText = "Registrar Serviço";
-            document.getElementById('btnSubmit').className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition duration-200";
+            document.getElementById('btnSubmit').className = "btn-primary btn-block";
             document.getElementById('btnCancelarEdicao').classList.add('hidden');
             if (window.lucide) lucide.createIcons();
             atualizarSubcategorias();
@@ -1708,43 +1940,49 @@
                 let botaoWppCliente = '';
                 let botaoWppAcao = '';
                 if (reg.whatsappCliente) {
-                    botaoWppCliente = `<button onclick="enviarMensagemCliente('${reg.whatsappCliente}', '${reg.nomeCliente || ''}')" title="Enviar mensagem WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded-lg transition shrink-0"><i data-lucide="phone" class="w-3.5 h-3.5"></i></button>`;
-                    botaoWppAcao = `<button onclick="enviarMensagemCliente('${reg.whatsappCliente}', '${reg.nomeCliente || ''}')" title="Enviar mensagem WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded-lg transition"><i data-lucide="phone" class="w-4 h-4"></i></button>`;
+                    botaoWppCliente = `<button onclick="enviarMensagemCliente('${reg.whatsappCliente}', '${reg.nomeCliente || ''}')" title="Enviar mensagem WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded-ctl transition shrink-0"><i data-lucide="phone" class="w-3.5 h-3.5"></i></button>`;
+                    botaoWppAcao = `<button onclick="enviarMensagemCliente('${reg.whatsappCliente}', '${reg.nomeCliente || ''}')" title="Enviar mensagem WhatsApp" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded-ctl transition"><i data-lucide="phone" class="w-4 h-4"></i></button>`;
                 }
 
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="p-3 font-medium text-slate-700">${dataFormatada}</td>
-                        <td class="p-3 font-semibold text-slate-800">${reg.protocolo || '<span class="text-slate-300 font-normal">Sem protocolo</span>'}</td>
-                        <td class="p-3">
-                            <div class="flex items-center gap-1.5">
+                    <tr>
+                        <td class="whitespace-nowrap font-medium text-slate-600">${dataFormatada}</td>
+                        <td class="mono font-semibold text-slate-800">${reg.protocolo || '<span class="text-slate-300 font-normal font-sans">Sem protocolo</span>'}</td>
+                        <td class="max-w-[220px]">
+                            <div class="flex items-center gap-1.5 min-w-0">
                                 ${botaoWppCliente}
-                                <div>
-                                    <div class="font-semibold text-slate-800">${reg.nomeCliente || '<span class="text-slate-300 font-normal">Não informado</span>'}</div>
-                                    <div class="text-xs text-slate-500">${reg.whatsappCliente || ''}</div>
+                                <div class="min-w-0">
+                                    <div class="font-semibold text-slate-800 truncate">${reg.nomeCliente || '<span class="text-slate-300 font-normal">Não informado</span>'}</div>
+                                    <div class="text-xs text-slate-500 num">${reg.whatsappCliente || ''}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="p-3">
-                            <span class="px-2 py-0.5 rounded text-xs font-normal ${reg.tipo === 'SIMPLES' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${reg.subcategoria ? `${reg.tipo}/${reg.subcategoria}` : reg.tipo}</span>
+                        <td>
+                            <span class="chip ${reg.tipo === 'SIMPLES' ? 'bg-brand-50 text-brand-700 border border-brand-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">${reg.subcategoria ? `${reg.tipo}/${reg.subcategoria}` : reg.tipo}</span>
                         </td>
-                        <td class="p-3 font-bold text-slate-800">${reg.pontos} pts</td>
-                        <td class="p-3 text-center flex justify-center items-center gap-1">
+                        <td class="text-right font-semibold text-slate-900 num whitespace-nowrap">${reg.pontos}<span class="text-slate-400 font-normal text-xs ml-0.5">pts</span></td>
+                        <td class="text-center whitespace-nowrap"><div class="flex justify-center items-center gap-1">
                             ${botaoWppAcao}
-                            <button onclick="editarRegistro('${reg.firebaseId}')" title="Editar serviço" class="text-slate-400 hover:text-amber-600 p-1.5 rounded-lg transition"><i data-lucide="pencil-line" class="w-4 h-4"></i></button>
-                            <button onclick="excluirRegistro('${reg.firebaseId}')" title="Excluir serviço" class="text-slate-400 hover:text-red-600 p-1.5 rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </td>
+                            <button onclick="editarRegistro('${reg.firebaseId}')" title="Editar serviço" class="text-slate-400 hover:text-amber-600 p-1.5 rounded-ctl transition"><i data-lucide="pencil-line" class="w-4 h-4"></i></button>
+                            <button onclick="excluirRegistro('${reg.firebaseId}')" title="Excluir servico" class="text-slate-400 hover:text-red-600 p-1.5 rounded-ctl hover:bg-red-50 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div></td>
                     </tr>
                 `;
             });
 
             if (registrosExibidos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum serviço registrado neste modo de visualização.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center">
+                    <i data-lucide="inbox" class="w-8 h-8 mx-auto text-slate-300"></i>
+                    <p class="text-sm font-semibold text-slate-500 mt-3">Nenhum servico neste modo de visualizacao</p>
+                    <p class="text-xs text-slate-400 mt-1">Troque o dia no filtro ou o modo no botao de ajustes.</p>
+                </td></tr>`;
             }
 
-            document.getElementById('txtTotalDia').innerText = `${totalDiaSelecionado} Pontos`;
-            document.getElementById('txtTotalSemana').innerText = `${totalSemana} Pontos`;
-            document.getElementById('txtTotalMes').innerText = `${totalMes} Pontos`;
+            // A unidade ("pts") esta fixa no HTML, em tamanho menor. Isso deixa
+            // o numero sozinho no tamanho de display, que e o que se le de longe.
+            document.getElementById('txtTotalDia').innerText = totalDiaSelecionado;
+            document.getElementById('txtTotalSemana').innerText = totalSemana;
+            document.getElementById('txtTotalMes').innerText = totalMes;
 
             let diasUteisPassados = 0;
             const dataHojeObj = new Date();
@@ -1764,12 +2002,196 @@
             if (diasUteisPassados < 1) diasUteisPassados = 1;
 
             let mediaMesUteis = totalMes / diasUteisPassados;
-            document.getElementById('infoMediaMesUteisTopo').innerText = `Média Mês (Úteis): ${mediaMesUteis.toFixed(1)} pts/dia`;
+            document.getElementById('infoMediaMesUteisTopo').innerText = `Media em dias uteis: ${mediaMesUteis.toFixed(1)} pts/dia`;
 
             document.getElementById('qtdTarefasMes').innerText = qtdTarefasMes;
             document.getElementById('pontosTarefasMes').innerText = `${pontosTarefasMes} pts`;
 
             atualizarPainelMetasEProjecao(anoF, mesF, meusRegistros);
+            renderizarDashboard(registrosMes, anoF, mesF);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // ============================================================
+        // DASHBOARD DO MES
+        //
+        // Tres leituras que a tabela sozinha nao da:
+        //   1. a FORMA do mes  - em que dias a producao aconteceu;
+        //   2. a COMPOSICAO    - de que tipo de servico vieram os pontos;
+        //   3. o RITMO         - o quanto ja andou do mes contra o quanto ja
+        //                        andou da meta (adiantado ou atrasado).
+        //
+        // Tudo desenhado com div e SVG inline. Uma biblioteca de graficos
+        // custaria dezenas de KB para desenhar 30 retangulos, e este painel
+        // abre no celular do tecnico, em campo, as vezes no 4G.
+        //
+        // Usa a MESMA lista corrigida do "Total de Pontos" (sem lancamento
+        // suspeito, sem protocolo repetido). Grafico que contradiz o card do
+        // topo e pior do que grafico nenhum.
+        // ============================================================
+        function renderizarDashboard(registrosDoMes, ano, mes) {
+            const elDias = document.getElementById('graficoDiario');
+            const elTipos = document.getElementById('graficoTipos');
+            const elRitmo = document.getElementById('graficoRitmo');
+            if (!elDias || !elTipos || !elRitmo) return;
+
+            const validos = filtrarRegistrosValidosMes(registrosDoMes || []);
+            const ultimoDia = new Date(ano, mes, 0).getDate();
+
+            const hojeObj = new Date();
+            const ehMesCorrente = (ano === hojeObj.getFullYear() && mes === hojeObj.getMonth() + 1);
+            const diaDeHoje = ehMesCorrente ? hojeObj.getDate() : ultimoDia;
+
+            // ---------- 1. Producao por dia ----------
+            const porDia = new Array(ultimoDia + 1).fill(0);
+            const qtdPorDia = new Array(ultimoDia + 1).fill(0);
+            validos.forEach(reg => {
+                const dia = Number(String(reg.data).split('-')[2]);
+                if (dia >= 1 && dia <= ultimoDia) {
+                    porDia[dia] += Number(reg.pontos) || 0;
+                    qtdPorDia[dia] += 1;
+                }
+            });
+
+            const maximo = Math.max(1, ...porDia);
+            let melhorDia = 0;
+            for (let d = 1; d <= ultimoDia; d++) {
+                if (porDia[d] > (melhorDia ? porDia[melhorDia] : 0)) melhorDia = d;
+            }
+
+            let barras = '';
+            for (let d = 1; d <= ultimoDia; d++) {
+                const data = new Date(ano, mes - 1, d);
+                const fds = (data.getDay() === 0 || data.getDay() === 6);
+                const futuro = d > diaDeHoje;
+                const altura = porDia[d] > 0 ? Math.max(4, (porDia[d] / maximo) * 100) : 2;
+
+                // Cor carrega significado, nao decoracao: azul cheio para o dia
+                // com producao, cinza para dia util vazio, listrado para fim de
+                // semana e quase invisivel para dia que ainda nao chegou.
+                let cor = 'bg-brand-500';
+                if (porDia[d] === 0) cor = futuro ? 'bg-slate-100' : (fds ? 'bg-slate-100' : 'bg-slate-200');
+                else if (fds) cor = 'bg-brand-300';
+                if (d === melhorDia && porDia[d] > 0) cor = 'bg-brand-700';
+
+                const rotulo = `Dia ${String(d).padStart(2, '0')}: ${porDia[d]} pts em ${qtdPorDia[d]} servico(s)`;
+                barras += `<div class="flex-1 min-w-0 flex flex-col justify-end h-full group" title="${rotulo}">
+                        <div class="${cor} rounded-t-[3px] transition-all duration-500 group-hover:opacity-80" style="height:${altura.toFixed(1)}%"></div>
+                    </div>`;
+            }
+
+            let reguas = '';
+            for (let d = 1; d <= ultimoDia; d++) {
+                const mostrar = (d === 1 || d % 5 === 0 || d === ultimoDia);
+                reguas += `<div class="flex-1 min-w-0 text-center text-[9px] ${d === diaDeHoje && ehMesCorrente ? 'text-brand-600 font-bold' : 'text-slate-400'}">${mostrar ? String(d).padStart(2, '0') : ''}</div>`;
+            }
+
+            elDias.innerHTML = `
+                <div class="relative h-28 md:h-32 flex items-stretch gap-[2px] border-b border-slate-200">
+                    <div class="absolute inset-x-0 top-0 border-t border-dashed border-slate-200"></div>
+                    <div class="absolute inset-x-0 top-1/2 border-t border-dashed border-slate-100"></div>
+                    ${barras}
+                </div>
+                <div class="flex gap-[2px] mt-1.5">${reguas}</div>
+            `;
+
+            const legenda = document.getElementById('dashLegendaDias');
+            if (legenda) legenda.textContent = `pico de ${maximo} pts`;
+
+            const chipMelhor = document.getElementById('dashMelhorDia');
+            if (chipMelhor) {
+                chipMelhor.textContent = melhorDia
+                    ? `Melhor dia: ${String(melhorDia).padStart(2, '0')} (${porDia[melhorDia]} pts)`
+                    : 'Sem lancamentos no mes';
+            }
+
+            // ---------- 2. Composicao por tipo ----------
+            const porTipo = {};
+            validos.forEach(reg => {
+                const chave = reg.subcategoria ? `${reg.tipo} / ${reg.subcategoria}` : (reg.tipo || 'Sem tipo');
+                if (!porTipo[chave]) porTipo[chave] = { pts: 0, qtd: 0 };
+                porTipo[chave].pts += Number(reg.pontos) || 0;
+                porTipo[chave].qtd += 1;
+            });
+
+            const tipos = Object.entries(porTipo).sort((a, b) => b[1].pts - a[1].pts).slice(0, 5);
+            const totalPts = tipos.reduce((s, [, v]) => s + v.pts, 0) || 1;
+
+            elTipos.innerHTML = tipos.length ? tipos.map(([nome, v]) => {
+                const pct = (v.pts / totalPts) * 100;
+                return `
+                    <div>
+                        <div class="flex justify-between items-baseline text-xs mb-1">
+                            <span class="font-medium text-slate-700 truncate pr-2">${nome}</span>
+                            <span class="shrink-0 num text-slate-500"><b class="text-slate-800">${v.pts}</b> pts · ${v.qtd}x</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div class="bg-brand-500 h-1.5 rounded-full transition-all duration-700" style="width:${pct.toFixed(1)}%"></div>
+                        </div>
+                    </div>`;
+            }).join('') : '<p class="text-xs text-slate-400">Sem servicos lancados neste mes.</p>';
+
+            // ---------- 3. Ritmo contra a meta ----------
+            const META_PRINCIPAL = 6500;
+            const pontosMes = calcularSomaCorrigidaMes(registrosDoMes || []);
+
+            let uteisTotais = 0, uteisPassados = 0;
+            for (let d = 1; d <= ultimoDia; d++) {
+                const ds = new Date(ano, mes - 1, d).getDay();
+                if (ds !== 0 && ds !== 6) {
+                    uteisTotais++;
+                    if (d <= diaDeHoje) uteisPassados++;
+                }
+            }
+            const pctMes = uteisTotais ? (uteisPassados / uteisTotais) * 100 : 0;
+            const pctMeta = Math.min(100, (pontosMes / META_PRINCIPAL) * 100);
+            const diferenca = pctMeta - pctMes;
+
+            // "No ritmo" tem folga de 5 pontos percentuais para os dois lados.
+            // Sem essa folga, o cartao ficaria oscilando entre adiantado e
+            // atrasado a cada lancamento, e um indicador que pisca nao informa.
+            let estado, classeEstado, icone;
+            if (diferenca >= 5) { estado = 'Adiantado'; classeEstado = 'chip-ok'; icone = 'trending-up'; }
+            else if (diferenca <= -5) { estado = 'Atrasado'; classeEstado = 'chip-warn'; icone = 'trending-down'; }
+            else { estado = 'No ritmo'; classeEstado = 'chip-mute'; icone = 'minus'; }
+
+            const faltam = Math.max(0, META_PRINCIPAL - pontosMes);
+            const uteisRestantes = Math.max(0, uteisTotais - uteisPassados);
+            const porDiaNecessario = uteisRestantes ? (faltam / uteisRestantes) : faltam;
+
+            elRitmo.innerHTML = `
+                <div class="flex items-center justify-between gap-2">
+                    <div>
+                        <span class="display text-[28px] font-semibold text-slate-900 num">${pctMeta.toFixed(0)}%</span>
+                        <span class="text-xs text-slate-400 ml-1">de ${META_PRINCIPAL}</span>
+                    </div>
+                    <span class="${classeEstado}"><i data-lucide="${icone}" class="w-3 h-3"></i> ${estado}</span>
+                </div>
+
+                <div class="relative w-full bg-slate-100 rounded-full h-2.5 overflow-hidden mt-3">
+                    <div class="bg-brand-600 h-2.5 rounded-full transition-all duration-700" style="width:${pctMeta.toFixed(1)}%"></div>
+                </div>
+                <!-- Marcador do quanto do mes ja passou: e contra ele que o
+                     preenchimento acima deve ser lido, nao contra 100%. -->
+                <div class="relative h-4 mt-0.5">
+                    <div class="absolute top-0 -translate-x-1/2 flex flex-col items-center" style="left:${Math.min(96, Math.max(4, pctMes)).toFixed(1)}%">
+                        <div class="w-px h-2 bg-slate-400"></div>
+                        <span class="text-[9px] text-slate-400 whitespace-nowrap">hoje</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mt-2 text-xs">
+                    <div class="rounded-ctl bg-slate-50 border border-slate-100 p-2.5">
+                        <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Faltam</span>
+                        <b class="text-slate-900 num">${faltam} pts</b>
+                    </div>
+                    <div class="rounded-ctl bg-slate-50 border border-slate-100 p-2.5">
+                        <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Por dia util</span>
+                        <b class="text-slate-900 num">${porDiaNecessario.toFixed(1)} pts</b>
+                    </div>
+                </div>
+            `;
+
             if (window.lucide) lucide.createIcons();
         }
 
@@ -1841,23 +2263,19 @@
                 let pontosNecessariosPorDiaUtil = falta / diasUteisRestantesCalculo;
 
                 container.innerHTML += `
-                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 flex flex-col justify-between space-y-3">
+                    <div class="rounded-ctl border border-slate-200 bg-slate-50/60 p-4 flex flex-col justify-between gap-3">
                         <div>
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs font-bold text-slate-700 uppercase">META: ${meta} PTS</span>
-                                <span class="text-xs font-bold text-blue-600">Faltam: ${falta} pts</span>
+                            <div class="flex justify-between items-baseline">
+                                <span class="eyebrow">Meta ${meta}</span>
+                                <span class="display text-lg font-semibold ${falta === 0 ? 'text-emerald-600' : 'text-slate-900'} num">${porcentagem.toFixed(0)}%</span>
                             </div>
-                            <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden mt-2">
-                                <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: ${porcentagem.toFixed(1)}%"></div>
-                            </div>
-                            <div class="flex justify-between items-center mt-1">
-                                <span class="text-[10px] font-semibold text-slate-500">Atingido</span>
-                                <span class="text-[10px] font-bold text-slate-700">${porcentagem.toFixed(1)}% (${pontosMesAtual} pts)</span>
+                            <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden mt-2.5">
+                                <div class="${falta === 0 ? 'bg-emerald-500' : 'bg-brand-600'} h-1.5 rounded-full transition-all duration-700" style="width: ${porcentagem.toFixed(1)}%"></div>
                             </div>
                         </div>
-                        <div class="text-xs text-slate-600 space-y-1 border-t border-slate-200/60 pt-2">
-                            <p>• Falta para a meta: <b class="text-slate-800">${falta} pts</b></p>
-                            <p>• Meta diária (dias úteis): <b class="text-slate-800">${pontosNecessariosPorDiaUtil.toFixed(1)} pts/dia</b></p>
+                        <div class="text-xs text-slate-500 space-y-1 border-t border-slate-200/70 pt-2.5">
+                            <p class="flex justify-between"><span>Falta</span> <b class="text-slate-800 num">${falta} pts</b></p>
+                            <p class="flex justify-between"><span>Por dia util</span> <b class="text-slate-800 num">${pontosNecessariosPorDiaUtil.toFixed(1)} pts</b></p>
                         </div>
                     </div>
                 `;
@@ -1868,13 +2286,14 @@
                 : `Média diária (${mediaDiaria.toFixed(1)} pts/dia) multiplicada pelos ${diasUteisRestantes} dias úteis restantes e somada aos pontos totais do mês (${pontosMesAtual} pts).`;
 
             container.innerHTML += `
-                <div class="md:col-span-3 bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100 flex flex-col md:flex-row justify-between items-center gap-2">
-                    <div>
-                        <span class="text-xs font-bold text-indigo-600 uppercase">Projeção de Fechamento de Mês (${modoManualAtivo ? 'Modo Manual Ativo (>1000 pts)' : 'Mantendo o ritmo atual'})</span>
-                        <p class="text-xs text-slate-500 mt-0.5">${textoDescritivoProjecao}</p>
+                <div class="md:col-span-3 rounded-ctl border border-brand-100 bg-brand-50/50 p-4 flex flex-col md:flex-row justify-between md:items-center gap-3">
+                    <div class="min-w-0">
+                        <span class="eyebrow text-brand-700">Projecao de fechamento ${modoManualAtivo ? '(ajuste manual ativo)' : '(mantendo o ritmo atual)'}</span>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">${textoDescritivoProjecao}</p>
                     </div>
-                    <div class="text-right">
-                        <span class="text-lg font-black text-indigo-700">${projecaoFinalMes} pts</span>
+                    <div class="text-right shrink-0">
+                        <span class="display text-[28px] font-semibold text-brand-700 num">${projecaoFinalMes}</span>
+                        <span class="text-sm font-semibold text-brand-400 ml-1">pts</span>
                     </div>
                 </div>
             `;
@@ -2330,13 +2749,13 @@
 
             const container = document.getElementById('tabelaRanking');
             container.innerHTML = ranking.map(([nome, pontos], i) => `
-                <div class="p-3 rounded-xl border border-slate-100 ${i === 0 ? 'bg-amber-50/60' : 'bg-slate-50'}">
+                <div class="p-3 rounded-ctl border border-slate-100 ${i === 0 ? 'bg-amber-50/60' : 'bg-slate-50'}">
                     <div class="flex justify-between items-center mb-1.5">
                         <div class="flex items-center gap-2">
                             <span class="text-sm font-bold w-5 text-center">${medalhas[i] || (i + 1)}</span>
                             <span class="font-semibold text-slate-800 text-sm">${nome}</span>
                         </div>
-                        <span class="font-black text-blue-600 text-sm">${pontos} pts</span>
+                        <span class="font-semibold text-brand-600 text-sm">${pontos} pts</span>
                     </div>
                     ${barraProximaMeta(pontos)}
                 </div>
@@ -2362,7 +2781,7 @@
             porcentagem = Math.max(0, Math.min(100, porcentagem));
             return `
                 <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: ${porcentagem.toFixed(1)}%"></div>
+                    <div class="bg-brand-600 h-2 rounded-full transition-all duration-500" style="width: ${porcentagem.toFixed(1)}%"></div>
                 </div>
                 <div class="flex justify-between items-center mt-1">
                     <span class="text-[11px] font-semibold text-amber-700">Faltam ${faltam} pts</span>
@@ -2463,7 +2882,7 @@
                         <td class="p-2 font-bold">${pts} pts</td>
                         <td class="p-2 font-mono text-[10px] text-slate-400" title="${reg.firebaseId || ''}">${idCurto}</td>
                         <td class="p-2 text-center">
-                            <button onclick="excluirRegistro('${reg.firebaseId}'); setTimeout(renderizarAuditoria, 400);" title="Excluir este registro" class="text-slate-400 hover:text-red-600 p-1 rounded-lg transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            <button onclick="excluirRegistro('${reg.firebaseId}'); setTimeout(renderizarAuditoria, 400);" title="Excluir este registro" class="text-slate-400 hover:text-red-600 p-1 rounded-ctl transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                         </td>
                     </tr>
                 `;
@@ -2472,21 +2891,21 @@
             document.getElementById('tabelaAuditoria').innerHTML = linhas || `<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhum registro encontrado na nuvem para este colaborador neste mês.</td></tr>`;
 
             document.getElementById('resumoAuditoria').innerHTML = `
-                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Registros</p>
-                    <p class="text-lg font-black text-slate-800">${meus.length}</p>
+                <div class="bg-slate-50 rounded-ctl p-3 border border-slate-200 text-left">
+                    <p class="eyebrow text-[10px]">Registros</p>
+                    <p class="display text-xl font-semibold num text-slate-800">${meus.length}</p>
                 </div>
-                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100" title="Este é o mesmo número mostrado no card 'Total de Pontos' da tela principal — ignora valores suspeitos (>150 pts) e conta cada protocolo repetido só 1 vez.">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Total de Pontos do Mês</p>
-                    <p class="text-lg font-black text-blue-600">${somaOficial} pts</p>
+                <div class="bg-slate-50 rounded-ctl p-3 border border-slate-200 text-left" title="Este é o mesmo número mostrado no card 'Total de Pontos' da tela principal — ignora valores suspeitos (>150 pts) e conta cada protocolo repetido só 1 vez.">
+                    <p class="eyebrow text-[10px]">Total de Pontos do Mês</p>
+                    <p class="display text-xl font-semibold num text-brand-600">${somaOficial} pts</p>
                 </div>
-                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100" title="Soma de tudo que está salvo na nuvem, sem excluir valores suspeitos nem duplicidades — a diferença para o total oficial mostra quantos pontos os alertas abaixo estão somando indevidamente.">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Soma Bruta na Nuvem</p>
-                    <p class="text-lg font-black ${somaBruta !== somaOficial ? 'text-amber-600' : 'text-slate-500'}">${somaBruta} pts</p>
+                <div class="bg-slate-50 rounded-ctl p-3 border border-slate-200 text-left" title="Soma de tudo que está salvo na nuvem, sem excluir valores suspeitos nem duplicidades — a diferença para o total oficial mostra quantos pontos os alertas abaixo estão somando indevidamente.">
+                    <p class="eyebrow text-[10px]">Soma Bruta na Nuvem</p>
+                    <p class="display text-xl font-semibold num ${somaBruta !== somaOficial ? 'text-amber-600' : 'text-slate-500'}">${somaBruta} pts</p>
                 </div>
-                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Alertas</p>
-                    <p class="text-lg font-black ${(qtdSuspeitos + qtdDuplicados) > 0 ? 'text-red-600' : 'text-emerald-600'}">${qtdSuspeitos + qtdDuplicados}</p>
+                <div class="bg-slate-50 rounded-ctl p-3 border border-slate-200 text-left">
+                    <p class="eyebrow text-[10px]">Alertas</p>
+                    <p class="display text-xl font-semibold num ${(qtdSuspeitos + qtdDuplicados) > 0 ? 'text-red-600' : 'text-emerald-600'}">${qtdSuspeitos + qtdDuplicados}</p>
                 </div>
             `;
 
