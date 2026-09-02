@@ -623,6 +623,29 @@
                     </div>
                 </form>
 
+                <!-- FILTRO DO DIA E FERRAMENTAS DE BASE
+                     Vieram do cartao proprio que ocupava uma faixa inteira da
+                     coluna da direita so para abrigar quatro controles. Aqui
+                     ficam junto do seletor de mes, que e o outro controle de
+                     recorte - filtro perto de filtro. -->
+                <div class="pt-4 border-t border-slate-100 space-y-3">
+                    <div>
+                        <label class="lbl">Filtrar por dia</label>
+                        <input type="date" id="filtroData" onchange="calcularTotais()" class="field">
+                    </div>
+                    <div class="space-y-2">
+                        <button onclick="abrirAuditoria()" class="btn btn-sm btn-soft btn-block">
+                            <i data-lucide="search-check" class="w-3.5 h-3.5"></i> Auditoria completa
+                        </button>
+                        <button onclick="recalcularTotais()" class="btn btn-sm btn-soft btn-block">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Recalcular totais
+                        </button>
+                        <button onclick="limparRegistros()" class="btn btn-sm btn-danger btn-block">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Limpar meus registros
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Seção de Envio de Relatório (seleção de canal) -->
                 <div class="pt-4 border-t border-slate-100 relative">
                     <button type="button" onclick="toggleMenuRelatorio()" class="btn-dark btn-block">
@@ -696,21 +719,39 @@
                     </div>
                 </div>
 
-                <!-- DASHBOARD -------------------------------------------
-                     Os graficos sao SVG montado no proprio JS. Nenhuma
-                     biblioteca de grafico entra aqui: seriam ~90 KB extras
-                     para desenhar 30 retangulos, num app que roda no celular
-                     do tecnico com o dado que ja esta em memoria. -->
+                <!-- DASHBOARD DO MES (CARTAO UNICO) --------------------
+                     Ordem de leitura: o que aconteceu (producao por dia), de
+                     onde vieram os pontos e como esta o ritmo, onde isso
+                     coloca as metas, e onde o mes fecha. Antes eram tres
+                     cartoes contando a mesma historia em pedacos.
+
+                     Os graficos sao div e SVG montados no proprio JS. Nenhuma
+                     biblioteca entra aqui: seriam ~90 KB para desenhar 30
+                     retangulos, num app que abre no celular do tecnico. -->
                 <div class="card card-pad space-y-5">
                     <div class="card-head">
                         <h3 class="card-title"><i data-lucide="bar-chart-3" class="w-4 h-4 text-brand-600"></i> Dashboard do mes</h3>
-                        <div class="flex items-center gap-2">
-                            <span id="infoMediaDiaria" class="chip-mute">0 pts/dia</span>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span id="infoMediaDiaria" class="chip-brand">Media diaria: 0 pts/dia</span>
                             <span id="dashMelhorDia" class="chip-ok">Melhor dia: -</span>
+
+                            <!-- Gaveta do dashboard. Fica depois dos chips de
+                                 propósito: minimizado, o cabecalho continua
+                                 entregando media diaria e melhor dia - ou seja,
+                                 minimizar esconde o detalhe, nao a informacao. -->
+                            <button type="button" id="btnToggleDashboard" onclick="alternarDashboard()"
+                                    aria-expanded="true" aria-controls="corpoDashboard"
+                                    title="Minimizar o dashboard"
+                                    class="btn btn-sm btn-soft h-7 px-2">
+                                <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+                                <span id="rotuloToggleDashboard" class="hidden sm:inline">Minimizar</span>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Producao dia a dia -->
+                    <div id="corpoDashboard" class="space-y-5">
+
+                    <!-- 1. Producao dia a dia -->
                     <div>
                         <div class="flex items-baseline justify-between mb-2">
                             <span class="eyebrow">Producao por dia</span>
@@ -719,52 +760,30 @@
                         <div id="graficoDiario" class="w-full"></div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
-                        <!-- Composicao por tipo de servico -->
+                    <!-- 2. Composicao e ritmo, comprimidos lado a lado -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 border-t border-slate-100">
                         <div>
                             <span class="eyebrow">Composicao por tipo</span>
-                            <div id="graficoTipos" class="mt-3 space-y-2.5"></div>
+                            <div id="graficoTipos" class="mt-2.5 space-y-1.5"></div>
                         </div>
-                        <!-- Ritmo x meta -->
                         <div>
                             <span class="eyebrow">Ritmo da meta principal</span>
-                            <div id="graficoRitmo" class="mt-3"></div>
+                            <div id="graficoRitmo" class="mt-2.5"></div>
                         </div>
                     </div>
-                </div>
 
-                <!-- METAS E PROJECAO ------------------------------------- -->
-                <div class="card card-pad space-y-4">
-                    <div class="card-head border-b border-slate-100 pb-3">
-                        <h3 class="card-title"><i data-lucide="target" class="w-4 h-4 text-brand-600"></i> Projecao de metas</h3>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="painelMetas">
-                        <!-- Preenchido via JavaScript -->
-                    </div>
-                </div>
-
-                <!-- FILTRO E FERRAMENTAS DE BASE -------------------------- -->
-                <div class="card card-pad">
-                    <div class="flex flex-col md:flex-row md:items-end gap-4">
-                        <div class="md:w-56">
-                            <label class="lbl">Filtrar por dia</label>
-                            <input type="date" id="filtroData" onchange="calcularTotais()" class="field">
-                        </div>
-                        <div class="flex items-center gap-2 flex-wrap md:pb-0.5">
-                            <button onclick="abrirAuditoria()" class="btn btn-sm btn-soft">
-                                <i data-lucide="search-check" class="w-3.5 h-3.5"></i> Auditoria completa
-                            </button>
-                            <button onclick="recalcularTotais()" class="btn btn-sm btn-soft">
-                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Recalcular totais
-                            </button>
-                            <button onclick="limparRegistros()" class="btn btn-sm btn-danger">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Limpar meus registros
-                            </button>
+                    <!-- 3. Metas e 4. projecao de fechamento
+                         Saem do mesmo container: o JS ja emite a faixa de
+                         fechamento como um item md:col-span-3, entao ela cai
+                         naturalmente embaixo dos tres cartoes de meta. -->
+                    <div class="pt-4 border-t border-slate-100">
+                        <span class="eyebrow">Projecao de metas</span>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3" id="painelMetas">
+                            <!-- Preenchido via JavaScript -->
                         </div>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-3">Todos os numeros desta coluna consideram apenas os lancamentos do colaborador autenticado.</p>
+                    </div><!-- /corpoDashboard -->
                 </div>
-
 
                 <!-- Tabela de Histórico -->
                 <div class="card overflow-hidden">
@@ -1204,6 +1223,7 @@
             if (barra) { barra.classList.remove('hidden'); barra.classList.add('flex'); }
             document.getElementById('labelColaboradorLogado').innerText = tecnicoLogado;
             atualizarBotaoAdmin();
+            aplicarEstadoDashboard(lerPreferenciaDashboard());
             atualizarAvisoPontosManuaisRV();
             calcularTotais();
         }
@@ -2020,6 +2040,72 @@
             if (window.lucide) lucide.createIcons();
         }
 
+
+        // ============================================================
+        // GAVETA DO DASHBOARD
+        //
+        // A escolha (aberto / minimizado) vive no localStorage do proprio
+        // aparelho. E preferencia de tela, nao dado do negocio: no Firestore
+        // custaria uma leitura por carregamento e uma escrita por clique, no
+        // plano Spark, e obrigaria a mexer nas Regras. O preco de guardar
+        // localmente e nao viajar entre aparelhos - aceitavel para uma gaveta.
+        //
+        // Todo acesso vai em try/catch porque em aba anonima, ou com o
+        // armazenamento do site bloqueado, ler localStorage LANCA excecao. Um
+        // painel que nao abre por causa de uma preferencia seria pior do que
+        // nao ter a preferencia.
+        // ============================================================
+        const CHAVE_DASHBOARD = 'surgeos:dashboard';
+
+        function lerPreferenciaDashboard() {
+            try {
+                return localStorage.getItem(CHAVE_DASHBOARD) === 'minimizado' ? 'minimizado' : 'aberto';
+            } catch (e) {
+                return 'aberto';
+            }
+        }
+
+        function gravarPreferenciaDashboard(estado) {
+            try {
+                localStorage.setItem(CHAVE_DASHBOARD, estado);
+            } catch (e) {
+                // Sem armazenamento, a escolha vale so ate recarregar a pagina.
+            }
+        }
+
+        function aplicarEstadoDashboard(estado) {
+            const corpo = document.getElementById('corpoDashboard');
+            const btn = document.getElementById('btnToggleDashboard');
+            const rotulo = document.getElementById('rotuloToggleDashboard');
+            if (!corpo || !btn) return;
+
+            const minimizado = estado === 'minimizado';
+            corpo.classList.toggle('hidden', minimizado);
+            btn.setAttribute('aria-expanded', String(!minimizado));
+            btn.title = minimizado ? 'Abrir o dashboard' : 'Minimizar o dashboard';
+            if (rotulo) rotulo.textContent = minimizado ? 'Abrir' : 'Minimizar';
+
+            const icone = btn.querySelector('i, svg');
+            if (icone) {
+                // Depois que o Lucide troca o <i> por um <svg>, o atributo a
+                // reescrever passa a ser data-lucide no proprio svg.
+                icone.setAttribute('data-lucide', minimizado ? 'chevron-down' : 'chevron-up');
+                if (icone.tagName.toLowerCase() === 'svg') {
+                    const novo = document.createElement('i');
+                    novo.setAttribute('data-lucide', minimizado ? 'chevron-down' : 'chevron-up');
+                    novo.className = 'w-3.5 h-3.5';
+                    icone.replaceWith(novo);
+                }
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function alternarDashboard() {
+            const novo = lerPreferenciaDashboard() === 'minimizado' ? 'aberto' : 'minimizado';
+            gravarPreferenciaDashboard(novo);
+            aplicarEstadoDashboard(novo);
+        }
+
         // ============================================================
         // DASHBOARD DO MES
         //
@@ -2128,13 +2214,13 @@
             elTipos.innerHTML = tipos.length ? tipos.map(([nome, v]) => {
                 const pct = (v.pts / totalPts) * 100;
                 return `
-                    <div>
-                        <div class="flex justify-between items-baseline text-xs mb-1">
+                    <div class="py-0.5">
+                        <div class="flex justify-between items-baseline text-[11px] mb-0.5">
                             <span class="font-medium text-slate-700 truncate pr-2">${nome}</span>
                             <span class="shrink-0 num text-slate-500"><b class="text-slate-800">${v.pts}</b> pts · ${v.qtd}x</span>
                         </div>
-                        <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                            <div class="bg-brand-500 h-1.5 rounded-full transition-all duration-700" style="width:${pct.toFixed(1)}%"></div>
+                        <div class="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                            <div class="bg-brand-500 h-1 rounded-full transition-all duration-700" style="width:${pct.toFixed(1)}%"></div>
                         </div>
                     </div>`;
             }).join('') : '<p class="text-xs text-slate-400">Sem servicos lancados neste mes.</p>';
@@ -2188,16 +2274,10 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 mt-2 text-xs">
-                    <div class="rounded-ctl bg-slate-50 border border-slate-100 p-2.5">
-                        <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Faltam</span>
-                        <b class="text-slate-900 num">${faltam} pts</b>
-                    </div>
-                    <div class="rounded-ctl bg-slate-50 border border-slate-100 p-2.5">
-                        <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Por dia util</span>
-                        <b class="text-slate-900 num">${porDiaNecessario.toFixed(1)} pts</b>
-                    </div>
-                </div>
+                <p class="text-[11px] text-slate-400 mt-1.5 leading-snug">
+                    ${uteisPassados} de ${uteisTotais} dias uteis decorridos · faltam
+                    <b class="text-slate-600 num">${faltam} pts</b> para a meta principal.
+                </p>
             `;
 
             if (window.lucide) lucide.createIcons();
@@ -2248,11 +2328,11 @@
                 modoManualAtivo = true;
                 mediaDiaria = valorManualAtual / diasUteisPassados;
                 projecaoFinalMes = Math.round((mediaDiaria * diasUteisRestantes) + pontosMesAtual);
-                document.getElementById('infoMediaDiaria').innerText = `${mediaDiaria.toFixed(1)} pts/dia`;
+                document.getElementById('infoMediaDiaria').innerText = `Media diaria: ${mediaDiaria.toFixed(1)} pts/dia`;
             } else {
                 mediaDiaria = pontosMesAtual / diasUteisPassados;
                 projecaoFinalMes = Math.round((mediaDiaria * diasUteisRestantes) + pontosMesAtual);
-                document.getElementById('infoMediaDiaria').innerText = `${mediaDiaria.toFixed(1)} pts/dia`;
+                document.getElementById('infoMediaDiaria').innerText = `Media diaria: ${mediaDiaria.toFixed(1)} pts/dia`;
             }
 
             const metas = [6500, 7500, 8500];
