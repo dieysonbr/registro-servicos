@@ -163,6 +163,13 @@
             .anim-in, .texto-correndo-rv { animation: none !important; }
         }
 
+        /* Ajuda do campo de pontos manuais: aparece ao passar o mouse ou ao
+           tocar. Fica em CSS, e nao em JS, para o hover funcionar mesmo antes
+           de qualquer script rodar. */
+        .ajuda-rv { display: none; }
+        .grupo-ajuda:hover .ajuda-rv,
+        .ajuda-rv.aberto { display: block; }
+
         /* Barra de rolagem discreta nas areas densas. */
         .scroll-slim { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
         .scroll-slim::-webkit-scrollbar { height: 8px; width: 8px; }
@@ -597,7 +604,31 @@
                                 <span class="texto-correndo-rv text-[11px] font-bold text-amber-700">INSERIR TOTAL DE PONTOS DA RV MANUALMENTE : PASSE O MOUSE AQUI&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INSERIR TOTAL DE PONTOS DA RV MANUALMENTE : PASSE O MOUSE AQUI&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
                             </div>
                         </div>
-                        <input type="number" id="pontosManuais" placeholder="INSERIR TOTAL DE PONTOS DA RV MANUALMENTE" title="Exemplo: se na tabela de RV geral que enviaram no grupo operacional você estiver, por exemplo, com 2359 pontos, insira 2359 pontos neste campo. A partir daí, adicione cada serviço executado normalmente, um por um, dali em diante." class="field font-semibold bg-slate-100">
+                        <div class="grupo-ajuda relative">
+                            <div class="flex items-center justify-between gap-2 mb-1.5">
+                                <label for="pontosManuais" class="lbl mb-0">Inserir pontos manualmente aqui</label>
+                                <button type="button" onclick="alternarAjudaRV()" aria-controls="ajudaRV" aria-expanded="false"
+                                        class="chip-warn cursor-help shrink-0">
+                                    <i data-lucide="help-circle" class="w-3 h-3"></i> PASSE O MOUSE AQUI
+                                </button>
+                            </div>
+
+                            <!-- Explicacao: abre no hover (mouse) e no toque
+                                 (celular). So hover deixaria o tecnico em campo
+                                 sem acesso ao texto. -->
+                            <div id="ajudaRV" role="tooltip"
+                                 class="ajuda-rv absolute z-30 left-0 right-0 bottom-full mb-2 p-3 rounded-ctl bg-ink-900 text-white/90 text-xs leading-relaxed shadow-pop">
+                                <b class="text-white">Para que serve:</b> lancar de uma vez o total de RV que voce ja
+                                tinha acumulado antes de comecar a usar o sistema.
+                                <br><br>
+                                <b class="text-white">Exemplo:</b> se na tabela de RV geral que enviaram no grupo
+                                operacional voce estiver com 2359 pontos, insira <b class="text-white">2359</b> neste
+                                campo. A partir dai, adicione cada servico executado normalmente, um por um, dali em
+                                diante.
+                            </div>
+
+                            <input type="number" id="pontosManuais" placeholder="Ex: 2359" class="field font-semibold bg-slate-100">
+                        </div>
                     </div>
 
                     <div class="space-y-2">
@@ -609,8 +640,8 @@
                         </button>
 
                         <!-- Botão de Ranking Geral (logo abaixo de Registrar Serviço) -->
-                        <button type="button" onclick="abrirRanking()" class="btn-soft btn-block">
-                            <i data-lucide="trophy" class="w-3.5 h-3.5"></i> Ver Ranking Geral de Pontos
+                        <button type="button" onclick="abrirRanking()" class="btn btn-block bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 hover:border-amber-400 shadow-sm hover:shadow-md">
+                            <i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i> Ver Ranking Geral de Pontos
                         </button>
                     </div>
 
@@ -1201,6 +1232,27 @@
         // de pontos manuais da RV. Só aparece se o colaborador logado ainda NUNCA
         // usou esse campo — depois da 1ª vez que ele usa, some para sempre (fica
         // guardado no Firestore, então não volta nem trocando de aparelho).
+        // Abre e fecha a explicacao do campo de RV no clique/toque. O hover
+        // e resolvido em CSS; isto existe para o celular, onde hover nao ha.
+        function alternarAjudaRV() {
+            const ajuda = document.getElementById('ajudaRV');
+            const botao = document.querySelector('[aria-controls="ajudaRV"]');
+            if (!ajuda) return;
+            const aberto = ajuda.classList.toggle('aberto');
+            if (botao) botao.setAttribute('aria-expanded', String(aberto));
+        }
+
+        // Toque fora fecha a explicacao, senao ela fica presa na tela do
+        // celular ate a pessoa achar de novo o botao que a abriu.
+        document.addEventListener('click', function (e) {
+            const ajuda = document.getElementById('ajudaRV');
+            if (!ajuda || !ajuda.classList.contains('aberto')) return;
+            if (e.target.closest('#ajudaRV') || e.target.closest('[aria-controls="ajudaRV"]')) return;
+            ajuda.classList.remove('aberto');
+            const botao = document.querySelector('[aria-controls="ajudaRV"]');
+            if (botao) botao.setAttribute('aria-expanded', 'false');
+        });
+
         function atualizarAvisoPontosManuaisRV() {
             const aviso = document.getElementById('avisoPontosManuaisRV');
             if (!aviso || !tecnicoLogado) return;
@@ -1426,6 +1478,7 @@
             const selectSub = document.getElementById('subcategoriaServico');
 
             if (tipo === 'SIMPLES') {
+                selectSub.required = false;
                 selectSub.innerHTML = `
                     <option value="">Subcategoria</option>
                     <option value="CABO REDE">CABO REDE</option>
@@ -1442,12 +1495,16 @@
                     <option value="TV">TV</option>
                 `;
             } else {
+                // Cada uma vale diferente, e o rotulo diz isso: sem escolher,
+                // o sistema cairia no default de 77 pts (FTTH) e gravaria
+                // pontuacao errada em silencio para FTTA ou FTTX.
                 selectSub.innerHTML = `
-                    <option value="">Subcategoria</option>
-                    <option value="FTTH">FTTH</option>
-                    <option value="FTTX">FTTX</option>
-                    <option value="FTTA">FTTA</option>
+                    <option value="">Obrigatorio</option>
+                    <option value="FTTH">FTTH · 77 pts</option>
+                    <option value="FTTX">FTTX · 83 pts</option>
+                    <option value="FTTA">FTTA · 69 pts</option>
                 `;
+                selectSub.required = true;
             }
             atualizarInfoCompleto();
         }
@@ -1455,6 +1512,11 @@
         document.getElementById('subcategoriaServico').addEventListener('change', atualizarInfoCompleto);
 
         function atualizarCorSubcategoria() {
+            // Escolheu: tira a marcacao vermelha deixada pela validacao.
+            const campoSub0 = document.getElementById('subcategoriaServico');
+            if (campoSub0 && campoSub0.value) {
+                campoSub0.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+            }
             const selectSub = document.getElementById('subcategoriaServico');
             selectSub.classList.remove('text-slate-400', 'text-slate-800', 'font-bold');
             selectSub.classList.add('font-normal', selectSub.value ? 'text-slate-800' : 'text-slate-400');
@@ -1540,6 +1602,25 @@
             const pontosManuaisInput = document.getElementById('pontosManuais').value;
             
             let subcategoria = document.getElementById('subcategoriaServico').value || "";
+
+            // TROCA FLAT sem subcategoria caia no default de 77 pts (FTTH) e
+            // gravava pontuacao errada, sem aviso, para FTTA (69) e FTTX (83).
+            // Barrar aqui e mais barato do que descobrir na auditoria.
+            if (tipo === 'TROCA FLAT' && !subcategoria) {
+                const campoSub = document.getElementById('subcategoriaServico');
+                campoSub.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+                campoSub.focus();
+                alert(`Escolha a subcategoria da TROCA FLAT.
+
+Cada uma vale diferente:
+  FTTH = 77 pts
+  FTTX = 83 pts
+  FTTA = 69 pts
+
+Sem escolher, o sistema lançaria 77 pts para qualquer uma delas.`);
+                return;
+            }
+
             let pontosUnitarios = 39;
 
             if (tipo === 'TROCA FLAT') {
