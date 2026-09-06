@@ -97,6 +97,26 @@
                             focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15; }
             select.field { @apply pr-8; }
 
+            /* --- Campo de data em pt-BR (dd/mm/aaaa) -------------------------
+               O input nativo type="date" mostra o formato de acordo com o
+               idioma do navegador/aparelho, e nao com o lang="pt-BR" da
+               pagina. Por isso escondemos o texto nativo (o valor real e o
+               calendario continuam funcionando normalmente) e sobrepomos um
+               rotulo formatado em dd/mm/aaaa. */
+            .date-field { position: relative; }
+            .date-field input[type="date"] { color: transparent; }
+            .date-field input[type="date"]::-webkit-datetime-edit,
+            .date-field input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+            .date-field input[type="date"]::-webkit-datetime-edit-text,
+            .date-field input[type="date"]::-webkit-datetime-edit-month-field,
+            .date-field input[type="date"]::-webkit-datetime-edit-day-field,
+            .date-field input[type="date"]::-webkit-datetime-edit-year-field { color: transparent; }
+            .date-field-label {
+                position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
+                font-size: 0.875rem; color: #1e293b; pointer-events: none; white-space: nowrap;
+            }
+            .date-field-label:empty::before { content: "dd/mm/aaaa"; color: #94a3b8; }
+
             /* --- Indicadores ------------------------------------------------ */
             .kpi        { @apply card p-4 md:p-5 relative overflow-hidden; }
             .kpi-label  { @apply eyebrow; }
@@ -535,7 +555,10 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-1">Data do Serviço</label>
-                            <input type="date" id="dataTrabalho" required class="field">
+                            <div class="date-field">
+                                <input type="date" id="dataTrabalho" required class="field">
+                                <span class="date-field-label"></span>
+                            </div>
                         </div>
 
                         <div>
@@ -638,7 +661,10 @@
                 <div class="pt-4 border-t border-slate-100 space-y-3">
                     <div>
                         <label class="lbl">Filtrar por dia</label>
-                        <input type="date" id="filtroData" onchange="calcularTotais()" class="field">
+                        <div class="date-field">
+                            <input type="date" id="filtroData" onchange="calcularTotais()" class="field">
+                            <span class="date-field-label"></span>
+                        </div>
                     </div>
                     <div class="space-y-2">
                         <button onclick="abrirAuditoria()" class="btn btn-sm btn-soft btn-block">
@@ -844,6 +870,36 @@
     </div>
 
     <script>
+        // Mantem o rotulo dd/mm/aaaa sincronizado com o input[type=date] real,
+        // mesmo quando o valor e trocado via JS (nao so quando o usuario mexe
+        // no campo). O valor interno continua em yyyy-mm-dd, entao nada do
+        // resto do codigo (calculos, filtros, etc.) precisa mudar.
+        function formatarDataBR(iso) {
+            if (!iso) return '';
+            const [ano, mes, dia] = iso.split('-');
+            if (!ano || !mes || !dia) return '';
+            return `${dia}/${mes}/${ano}`;
+        }
+        function ativarLabelDataBR(id) {
+            const input = document.getElementById(id);
+            if (!input) return;
+            const label = input.nextElementSibling;
+            const atualizar = () => {
+                if (label && label.classList.contains('date-field-label')) {
+                    label.textContent = formatarDataBR(input.value);
+                }
+            };
+            const descritorNativo = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+            Object.defineProperty(input, 'value', {
+                get() { return descritorNativo.get.call(this); },
+                set(v) { descritorNativo.set.call(this, v); atualizar(); }
+            });
+            input.addEventListener('input', atualizar);
+            atualizar();
+        }
+        ativarLabelDataBR('dataTrabalho');
+        ativarLabelDataBR('filtroData');
+
         const hojeObj = new Date();
         const hoje = hojeObj.toLocaleDateString('en-CA');
         document.getElementById('dataTrabalho').value = hoje;
