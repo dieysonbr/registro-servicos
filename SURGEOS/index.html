@@ -205,7 +205,8 @@
         import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import {
             getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
-            updatePassword, createUserWithEmailAndPassword
+            updatePassword, createUserWithEmailAndPassword,
+            setPersistence, browserLocalPersistence
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // ⚠️ SUBSTITUA COM AS SUAS CONFIGURAÇÕES DO FIREBASE
@@ -261,12 +262,22 @@
         //
         // Agora a sessão só existe depois de signInWithEmailAndPassword, e as
         // regras exigem o provedor 'password'.
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.aoAutenticar(user);
-            } else {
-                window.aoEncerrarSessao();
-            }
+        //
+        // setPersistence(browserLocalPersistence) força o Firebase a guardar a
+        // sessão no localStorage em vez do IndexedDB (mecanismo padrão do SDK).
+        // Sem isso, alguns navegadores móveis (principalmente Safari/iOS têm
+        // bugs conhecidos no IndexedDB) perdem a sessão salva a cada
+        // atualização da página, devolvendo o usuário para a tela de login
+        // mesmo sem nenhum erro aparecer. O localStorage é mais simples e não
+        // sofre desse problema.
+        setPersistence(auth, browserLocalPersistence).finally(() => {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    window.aoAutenticar(user);
+                } else {
+                    window.aoEncerrarSessao();
+                }
+            });
         });
 
         // O seletor de nomes é preenchido por aoEncerrarSessao(), que roda no
